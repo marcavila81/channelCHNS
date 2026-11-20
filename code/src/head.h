@@ -32,6 +32,18 @@
 #define Fr   1.0             // Froude number
 #define WE_REF 1.0           // reference Weber number (capillary slot 1/(Cn*We)) used if rho_r==1
 #define LC   (LY/2.0)       // characteristic length for the Bond number (half channel height)
+#define TH_S 20.0            // case contact angle (degrees)
+#define BO   1.0             // physical Bond number of the case (input)
+/* Bo (physical, input BO) vs We (internal Weber/capillary slot), up to O(1) consts:
+       Bo = (rho_r-1)*LC^2*We/Fr^2   =>   We = Bo*Fr^2/((rho_r-1)*LC^2)
+   Buoyancy uses (rho_r-1)/Fr^2; the capillary term uses 1/(Cn*We).
+   Output file names keep BO but print the physical Bo (the variable).
+   If rho_r == 1 (matched densities) there is no buoyancy: Bo is forced to 0
+   at runtime (with a printf) and We = WE_REF. The old Fritz-based critical
+   estimate
+       Boc = 0.564*(TH_S*pi/360)^2/(1-rho_r) - 0.1
+   is kept for reference only: it must NOT be computed anywhere in the code
+   (it is singular for rho_r = 1). */
 // Ratios
 #define rho_r 1.0           // density   ratio
 #define mu_r  1.0           // viscosity ratio			     
