@@ -620,7 +620,7 @@ static void wrappln(float *c_pln,float2 *c_p){
 /*+++++++++++++++++++++++ MAIN FUNCTIONS NONLINEAR +++++++++++++++++++++++*/
 // INITIALIZE NONLINEAR TERMS............................................../
 void init_nonlinear(vfield du,float2 *rhc,float2 *rux,vfield u,float2 *c,
- float2 *ux,float *flag,float2 *th_BC,float2 *ch_BC,vfield ub,float Bo,float th_s){
+ float2 *ux,float *flag,float2 *th_BC,float2 *ch_BC,vfield ub,float Bo,float We,float th_s){
  // OLD CALCULATION OF THE NON-LINEAR TERM································
  // 1. Compute the wall-normal derivative 
  derivy(du.x,u.x);         derivy(du.y,u.y);          derivy(du.z,u.z); 
@@ -677,8 +677,8 @@ void init_nonlinear(vfield du,float2 *rhc,float2 *rux,vfield u,float2 *c,
  // 19.Padd and pass it to physical space
  padForward(d2u_p.x,du.x);padForward(d2u_p.y,du.y);padForward(d2u_p.z,du.z);
  fftBackward(d2u_p.x);    fftBackward(d2u_p.y);    fftBackward(d2u_p.z);
- // 20.Add to the rhs of the NSE - Up·c·nabla(phi)
- calcNL_NSE_CH(d1u_p,c_p,d2u_p,Bo);  
+ // 20.Add to the rhs of the NSE - Up·c·nabla(phi); capillary slot = We
+ calcNL_NSE_CH(d1u_p,c_p,d2u_p,We);  
  // NONLINEAR TERM FOR THE NSE··········································
  // 21.fftForward  of rhs
  fftForward(d1u_p.x);      fftForward(d1u_p.y);     fftForward(d1u_p.z);    
@@ -734,9 +734,9 @@ void init_nonlinear(vfield du,float2 *rhc,float2 *rux,vfield u,float2 *c,
 // NONLINEAR FUNCTION....................................................../
 void nonlinear(vfield u,float2*c,float2*ux,vfield rhs,float2*rhc,float2 *rux
    ,float2*p,float2*g,float2*hp,float2*hg,float2*hc,float2*hux,float* flag
-   ,float2 *th_BC,float2 *ch_BC,vfield ub,float Bo,float th_s){
+   ,float2 *th_BC,float2 *ch_BC,vfield ub,float Bo,float We,float th_s){
  // STEP 0. Compute the rhs and u at this time step      save old u !!!
- init_nonlinear(rhs,rhc,rux,u,c,ux,flag,th_BC,ch_BC,ub,Bo,th_s); 
+ init_nonlinear(rhs,rhc,rux,u,c,ux,flag,th_BC,ch_BC,ub,Bo,We,th_s); 
  copyVfield(ub,u);    
  // STEP 1. Compute the laplacian of phi, g, Save to u.x,u.z
  compLap(u.x,p);        compLap(u.z,g);             

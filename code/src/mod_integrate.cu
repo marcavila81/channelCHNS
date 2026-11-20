@@ -19,7 +19,7 @@ static void main_int(float2 *p,float2 *g,float2 *ch,vfield u,float2 *ux,
      		    float2 *thn_BC,float2 *ch_BC,float2 *chn_BC,float2 *th);
 /*+++++++++++++++++++++++++++ MAIN FUNCTION ++++++++++++++++++++++++++++++*/
 // MAIN FUNCTION TO INTEGRATE............................................../
-void integrate(vfield u,float2 *ch,float Bo,float th_s){
+void integrate(vfield u,float2 *ch,float Bo,float We,float th_s){
   // Allocate variables
   float2 *th,*hp,*hg,*hc,*p,*g,*ux,*rhc,*rux,*hux;
   float2 *th_BC,*ch_BC,*thn_BC,*chn_BC;
@@ -56,7 +56,7 @@ void integrate(vfield u,float2 *ch,float Bo,float th_s){
   // Step 0.1: Initial phi, g and old u
   v_to_phi(p,u.y);  u_to_g(g,u.x,u.z);  copyVfield(ub,u);
   // Step 0.2: Compute the initial hp(rhs.x) hg(rhs.z)
-  init_nonlinear(rhs,rhc,rux,u,ch,ux,flag,th_BC,ch_BC,ub,Bo,th_s);     
+  init_nonlinear(rhs,rhc,rux,u,ch,ux,flag,th_BC,ch_BC,ub,Bo,We,th_s);     
   // Step 0.3: Copy to the previous to last rhs/BC
   copyBuffer(hp,rhs.x);       copyBuffer(hg,rhs.z);  
   copyBuffer(hc,rhc);         copyBufferux(hux,rux);
@@ -71,7 +71,7 @@ void integrate(vfield u,float2 *ch,float Bo,float th_s){
     // STEP 1.0.3: If needed prepare the output to plot the plane
     if(t_pln/dt_pln>=1){flag[2]=t;t_pln=0.0;}
     // STEP 1.1: Compute the rhs save to u! (inside u also update ub)
-    nonlinear(u,ch,ux,rhs,rhc,rux,p,g,hp,hg,hc,hux,flag,th_BC,ch_BC,ub,Bo,th_s);
+    nonlinear(u,ch,ux,rhs,rhc,rux,p,g,hp,hg,hc,hux,flag,th_BC,ch_BC,ub,Bo,We,th_s);
     // STEP 1.2: Wrapper for the integration
     main_int(p,g,ch,u,ux,rhs,rhc,rux,th_BC,thn_BC,ch_BC,chn_BC,th);    
     // STEP 1.3: new time step

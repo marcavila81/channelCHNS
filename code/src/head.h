@@ -28,9 +28,17 @@
 #define eps  0.0            // magnitude of the random perturbation
 // Single-case run: explicit case parameters
 #define TH_S      20.0    // case contact angle (degrees)
-#define BO_VALUE  1.0     // Bond/Weber number of the case (explicit)
-/* Bo is now always explicit (BO_VALUE above). The old Fritz-based
-   critical estimate
+#define BO        1.0     // physical Bond number of the case (input)
+#define WE_REF    1.0     // reference Weber number (capillary slot 1/(Cn*We)) used if rho_r==1
+#define LC        (LY/2.0) // characteristic length for Bo (half channel height)
+/* Bo = physical Bond number (input); We = internal Weber/capillary slot
+   (up to O(1) constants):
+       Bo = (rho_r-1)*LC^2*We/Fr^2   =>   We = Bo*Fr^2/((rho_r-1)*LC^2)
+   The buoyancy term uses (rho_r-1)/Fr^2; the capillary term uses 1/(Cn*We).
+   Output file names keep BO but print the physical Bo.
+   If densities are matched (rho_r = 1) there is no buoyancy, so Bo is
+   forced to 0 at runtime (with a printf) and We = WE_REF. The old
+   Fritz-based critical estimate
        Boc = 0.564*(TH_S*pi/360)^2/(1-rho_r) - 0.1
    is kept here for reference only: it must NOT be computed anywhere
    in the code (it is singular for rho_r = 1). */
@@ -154,7 +162,7 @@ void wrt_rms(vfield d2u,float *flag);
 void wrt_pln(float *c_pln,float *flag,float th_s,float Bo);
 
 // INTEGRATE
-void integrate(vfield u,float2 *ch,float Bo,float th_s);
+void integrate(vfield u,float2 *ch,float Bo,float We,float th_s);
 
 // MODE ZZ
 void main_ZZ(vfield u,float2 *p,float2 *g);
@@ -169,10 +177,10 @@ void padBackwardBC(float2 *u,float2 *pad);
 void add_pert(vfield u,double *y);
 void add_drop(float2* ch,double *y);
 void init_nonlinear(vfield rhs,float2 *rhc,float2 *rux,vfield u,float2 *c,
-     float2 *ux,float* flag,float2 *th_BC,float2 *ch_BC,vfield ub,float Bo,float th_s);
+     float2 *ux,float* flag,float2 *th_BC,float2 *ch_BC,vfield ub,float Bo,float We,float th_s);
 void nonlinear(vfield u,float2*c,float2*ux,vfield rhs,float2*rhc,
     float2 *rux,float2*p,float2*g,float2*hp,float2*hg,float2*hc,
-     float2*hux,float* flag,float2 *th_BC,float2 *ch_BC,vfield ub,float Bo,float th_s);
+     float2*hux,float* flag,float2 *th_BC,float2 *ch_BC,vfield ub,float Bo,float We,float th_s);
 void initCh(float2 *ch,double *y_h,float th_s);
 
 // UTILS

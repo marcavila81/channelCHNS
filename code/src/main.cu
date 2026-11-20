@@ -12,12 +12,20 @@ int main(int argc, const char* argv[]){
  printf("\n++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
  printf("\n++++++++++++++  Welcome to nsWallChan in CUDA  +++++++++++++++");
  printf("\n++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
- // SINGLE CASE: explicit contact angle and Bond number (defines in head.h)
- float th_s = TH_S, Bo = BO_VALUE;
- // Startup assertion: the case values must be finite (guards against bad
- // defines in head.h, e.g. BO_VALUE left at 0)
- if(!isfinite(th_s) || !isfinite(Bo)){
-   fprintf(stderr,"\n ERROR: non-finite case values: TH_S=%f, BO_VALUE=%f -- check the defines in head.h\n",(double)th_s,(double)Bo);
+ // SINGLE CASE: explicit contact angle and physical Bond number (head.h)
+ float th_s = TH_S, Bo = BO;
+ // Matched densities -> no buoyancy -> the physical Bond number must be 0
+ if(rho_r==1.0){
+   printf("\n NOTE: matched densities (rho_r = 1): no buoyancy, setting Bo = 0\n");
+   Bo=0.0;
+ }
+ // Internal Weber number (capillary slot): Bo = (rho_r-1)*LC^2*We/Fr^2
+ float We = (rho_r==1.0) ? float(WE_REF)
+              : Bo*float(Fr)*float(Fr)/(float(rho_r-1.0)*float(LC)*float(LC));
+ printf("\n Case: TH_S=%03.2f  Bo=%02.2f (physical)  We=%.6f (Weber slot)\n",th_s,Bo,We);
+ // Startup assertion: the case values must be finite (guards against bad defines)
+ if(!isfinite(th_s) || !isfinite(Bo) || !isfinite(We)){
+   fprintf(stderr,"\n ERROR: non-finite case values: TH_S=%f, BO=%f, We=%f -- check the defines in head.h\n",(double)th_s,(double)Bo,(double)We);
    exit(1);
  }
  // SET DEVICE AND START CLOCK
@@ -52,7 +60,7 @@ int main(int argc, const char* argv[]){
  // Initialize the velocity field and the scalar field
  initField(u);  initCh(ch,y_h,th_s); 
  // INTEGRATION+++++++++++++++++++++++++++++++++++++++++++++++
- integrate(u,ch,Bo,th_s);   
+ integrate(u,ch,Bo,We,th_s);   
  // OUTRO ++++++++++++++++++++++++++++++++++++++++++++++++++++
  printf("\n FINISHED TH=%03.2f AND BO=%02.2f\n",th_s,Bo);
  // Last velocity field 
