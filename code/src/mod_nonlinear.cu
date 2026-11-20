@@ -51,7 +51,7 @@ static __global__ void calcNonlinear_k(float*uxK,float *uyK,float *uzK,
 
 // KERNEL TO CALC NONLINEAR TERM OF THE NSE WITH CH TERM................../
 static __global__ void calcNL_NSE_CH_k(float *rhxK,float *rhyK,float *rhzK,
-		            float *cK,float *dvxK,float *dvyK,float *dvzK){
+		float *cK,float *dvxK,float *dvyK,float *dvzK,float We){
   // Indexes of thread
   int k=blockIdx.x*blockDim.x+threadIdx.x;
   int i=blockIdx.y*blockDim.y+threadIdx.y;
@@ -169,7 +169,7 @@ static __global__ void calc_rhc_k(float *rhc,float *aux1){
 
 
 // KERNEL TO COMPUTE THE BC OF THE CH EQUATION............................/
-static __global__ void calc_BC_CH_k(float *BC_p,float *c_p){
+static __global__ void calc_BC_CH_k(float *BC_p,float *c_p,float th_s){
   // Indexes of thread
   int k=blockIdx.x*blockDim.x+threadIdx.x;
   int i=blockIdx.y*blockDim.y+threadIdx.y;
@@ -251,11 +251,10 @@ static __global__ void wrms_k(float *dux,float *duy,float *duz,float *uxK,
   // Stopper % index
   if(k>=2*NXP*NZP || i>=NY){return;}  int h=i*(2*NXP*NZP)+k; 
   // Read stuff
-  float um=u[i].x, ux=uxK[h], uy=uyK[h], uz=uzK[h];
+  float um=0*u[i].x, ux=uxK[h], uy=uyK[h], uz=uzK[h];
   // Write stuff
-  dux[h]=(ux-um)*(ux-um); duy[h]=uy*uy; duz[h]=uz*uz;
+  dux[h]=(ux)*(ux); duy[h]=uy*uy; duz[h]=uz*uz;
 }// END KERNEL TO COMPUTE THE RHS........................................./
-
 
 
 // KERNEL TO COPY TO UX EQUATION........................................../
@@ -266,6 +265,38 @@ static __global__ void copyux_k(float2 *ru,float2 *du,float2 *ux,float2 *u){
   ru[i].x=du[h].x; ru[i].y=0.0; u[i].x=ux[h].x; u[i].y=0.0;
 }// END KERNEL TO COPY TO UX EQUATION...................................../
 
+// KERNEL TO COMPUTE THE CG OF THE BUBBLE................................./
+static __global__ void wycg_k(float* ycg,float* Vl,float *cK,double *yK){
+  // Indexes of thread
+  int k=blockIdx.x*blockDim.x+threadIdx.x;
+  int i=blockIdx.y*blockDim.y+threadIdx.y;
+  // Index of interest
+  int ix=k/(2*NZP), l=k%(2*NZP), h=i*(2*NXP*NZP)+k;
+  // STOPPER AND INDEX
+  if(l>=2*NZP || ix>=NXP || i>=NY){return;}
+  // Case of l>=2*NZP-2
+  if(l>=2*NZP-2){ycg[h]=0.0; Vl[h]=0.0; return;}
+  // Read stuff
+  float y=float(yK[i]); float c=cK[h]; float bbl=0.0;
+  // Bubble?
+  if(c>=0.0){bbl=1.0;}
+  // CG and bubble
+  Vl[h]=bbl;    ycg[h]=y*bbl; 
+}// END KERNEL TO COMPUTE THE CG OF THE BUBBLE............................/
+
+
+// KERNEL TO COPY FROM THE 3D FIELD TO THE 2D PLANE......................./
+static __global__ void wpln_k(float *c_pln,float *cch){
+ // Indexes of thread
+ int ix=blockIdx.x*blockDim.x+threadIdx.x;
+ int i =blockIdx.y*blockDim.y+threadIdx.y;
+ // Stopper
+ if(ix>=NXP || i>=NY){return;}
+ // Index of interest
+ int l=NZP-1, h=i*(2*NXP*NZP)+ix*2*NZP+l, hpl=i*NXP + ix; 
+ // Copy
+ c_pln[hpl]=cch[h]; return;
+}// END KERNEL TO COPY FROM THE 3D FIELD TO THE 2D PLANE................../
 
 
 // KERNEL TO ADD THE NOISE................................................/
@@ -297,7 +328,7 @@ static __global__ void add_pert_k(float* uKx,float* uKy,
 
 
 // KERNEL TO ADD THE NOISE................................................/
-static __global__ void add_drop_k(float* chK,double *yK){
+static __global__ void add_drop_k(float* chK,double *yK,float th_s){
   // Indexes of thread
   int k=blockIdx.x*blockDim.x+threadIdx.x;
   int i=blockIdx.y*blockDim.y+threadIdx.y;
@@ -305,14 +336,19 @@ static __global__ void add_drop_k(float* chK,double *yK){
   int ix=k/(2*NZP), l=k%(2*NZP), h=i*(2*NXP*NZP)+k;
   // STOPPER AND INDEX
   if(l>=2*NZP-2 || ix>=NXP || i>=NY){return;}
+  // Angle
+  double an_rd=double(th_s-90.0)*double(PI2)/double(360.0);
+  double sn=sin(an_rd); float fc=1.0-float(sn); 
+  // Radius
+  float Rd=Rad*pow(2.0/(fc*fc*(3-fc)),1.0/3.0); float hg=-Rd*float(sn);
   // Initialize the auxiliary variables
-  float y=float(yK[i]), z, x, cc;
+  float y=(float(yK[i])-hg), z, x, cc;
   // Read the position
   x=float(ix)/float(NXP);  z=float(l)/float(2*NZP-2);
   // Compute the distance from the center
   x=float(LX)*(x-0.5);    z=float(LZ)*(z-0.5);   cc=x*x + y*y + z*z;
   // Radius distance
-  cc=sqrtf(cc);  cc=(Rad-cc)/(sqrtf(2.0)*float(Cn)); 
+  cc=sqrtf(cc);  cc=(Rd-cc)/(sqrtf(2.0)*float(Cn)); 
   // Register to vector
   chK[h]=tanh(cc);   return;
 }// END KERNEL TO ADD THE NOISE........................................../
@@ -393,8 +429,10 @@ static __global__ void padBackward_BC_k(float2 *u,float2 *pad){
 static vfield u_p, d1u_p, d2u_p, d3u_p, dc_p;
 static float2 *aux1, *aux2, *aux3, *auxBC;
 static float2 *c_p, *BC_p;
+static float *c_pln;
+static double *y;
 static void calcNonlinear(vfield u,vfield d1u,vfield d2u,vfield d3u,float2 *cK,vfield dc);
-static void calcNL_NSE_CH(vfield d1u,float2 *c,vfield dvp);
+static void calcNL_NSE_CH(vfield d1u,float2 *c,vfield dvp,float We);
 static void calcNL_NSE_Vc(vfield d1u,float2 *c,vfield dvp);
 static void calcNL_NSE_dt(vfield d1u,float2 *c,vfield dvp);
 static void calc_c3(float2 *c3_p,float2 *c);
@@ -402,11 +440,13 @@ static void calc_vphiCH(float2 *c3_p,float2 *c);
 static void calc_vphi(float2 *c3,float2 *Lc,float2 *c);
 static void calc_conv_CH(float2 *c3_p,vfield u,vfield dc);
 static void calc_rhc(float2 *rhc,float2 *aux1);
-static void calc_BC_CH(float2 *BC_p,float2 *c_p);
+static void calc_BC_CH(float2 *BC_p,float2 *c_p,float th_s);
 static void wraprhs(float2 *Lap,float2 *nn,float2 *nn_1);
 static void wraprhc1(float2 *aux2,float2 *c);
 static void wraprhc(float2 *rc,float2*c,float2 *lc,float2 *nc,float2 *nc_1);
 static void wraprms(vfield d2u,vfield u,float2 *ux);
+static void wrapycg(float2 *ycg,float2 *bbl,float2 *c_p);
+static void wrappln(float *c_pln,float2 *c_p);
 
 /*+++++++++++++++++++++++++++++ WRAPPERS +++++++++++++++++++++++++++++++++*/
 // WRAPPER OF CALC NONLINEAR.............................................../
@@ -425,14 +465,14 @@ static void calcNonlinear(vfield u,vfield d1u,vfield d2u,vfield d3u,
 }// END WRAPPER OF CALC NONLINEAR........................................../
 
 // WRAPPER TO CALC NONLINEAR TERM OF THE NSE OF THE CH TERM................/
-static void calcNL_NSE_CH(vfield d1u,float2 *c,vfield dvp){
+static void calcNL_NSE_CH(vfield d1u,float2 *c,vfield dvp,float We){
     // Dimensions
     dim3 grid,block; block.x=block_size;
     grid.x=(2*NXP*NZP+block.x-1)/block.x;  grid.y=NY;
     // Call Kernel
     calcNL_NSE_CH_k<<<grid,block>>>
     ((float *)d1u.x,(float *)d1u.y,(float *)d1u.z,(float *)c
-    ,(float *)dvp.x,(float *)dvp.y,(float *)dvp.z);        return;
+    ,(float *)dvp.x,(float *)dvp.y,(float *)dvp.z,We);        return;
 }// END WRAPPER TO CALC NONLINEAR TERM OF THE NSE OF THE CH TERM.........../
 
 // WRAPPER TO CALC NONLINEAR TERM OF THE NSE OF THE Vc TERM................/
@@ -505,12 +545,12 @@ static void calc_rhc(float2 *rhc,float2 *aux1){
 }// END WRAPPER TO CALCULATE rhc=aux1+(1/Pe)*rhc.........................../
 
 // WRAPPER TO CALCULATE BC................................................./
-static void calc_BC_CH(float2 *BC_p,float2 *c_p){
+static void calc_BC_CH(float2 *BC_p,float2 *c_p,float th_s){
    // DIMENSIONS
    dim3 grid,block; block.x=block_size;
    grid.x=(2*NXP*NZP+block.x-1)/block.x;  grid.y=4;
    // Call kernel
-   calc_BC_CH_k<<<grid,block>>>((float *)BC_p,(float *)c_p); return;
+   calc_BC_CH_k<<<grid,block>>>((float *)BC_p,(float *)c_p,th_s); return;
 }// END WRAPPER TO CALCULATE BC............................................/
 
 
@@ -542,17 +582,6 @@ static void wraprhs(float2 *Lap,float2 *nn,float2 *nn_1){
   wraprhs_k<<<grid,block>>>((float*)Lap,(float*)nn,(float*)nn_1); return;
 }// END WRAPPER OF ASEMBLE OF RHS........................................../
 
-
-
-
-
-
-
-
-
-
-
-
 // WRAPPER TO COMPUTE RMS................................................../
 static void wraprms(vfield d2u,vfield u,float2 *ux){
    // Dimensions
@@ -563,10 +592,23 @@ static void wraprms(vfield d2u,vfield u,float2 *ux){
             (float*)u.x,  (float*)u.y,  (float*)u.z,ux); return;
 }// END WRAPPER TO COMPUTE RMS............................................./
 
+// WRAPPER TO COMPUTE THE POSITION OF THE CG OF THE BUBBLE................./
+static void wrapycg(float2 *ycg,float2 *bbl,float2 *c_p){
+   // Dimensions
+   dim3 grid,block; block.x=block_size;
+   grid.x=(2*NXP*NZP+block.x-1)/block.x;  grid.y=NY;
+   // Call kernel
+   wycg_k<<<grid,block>>>((float*)ycg,(float*)bbl,(float*)c_p,y);return;
+}// END WRAPPER TO COMPUTE THE POSITION OF THE CG OF THE BUBBLE............/
 
-
-
-
+// WRAPPER TO COPY FROM THE WHOLE 3D FIELD TO THE PLANE VECTOR............./
+static void wrappln(float *c_pln,float2 *c_p){
+   // Dimensions
+   dim3 grid,block; block.x=block_size;
+   grid.x=(NXP+block.x-1)/block.x; grid.y=NY;
+   // Call kernel
+   wpln_k<<<grid,block>>>(c_pln,(float *)c_p); return;
+}// END WRAPPER TO COPY FROM THE WHOLE 3D FIELD TO THE PLANE VECTOR......../
 
 
 // GUIDE
@@ -578,7 +620,7 @@ static void wraprms(vfield d2u,vfield u,float2 *ux){
 /*+++++++++++++++++++++++ MAIN FUNCTIONS NONLINEAR +++++++++++++++++++++++*/
 // INITIALIZE NONLINEAR TERMS............................................../
 void init_nonlinear(vfield du,float2 *rhc,float2 *rux,vfield u,float2 *c,
-             float2 *ux,float *flag,float2 *th_BC,float2 *ch_BC,vfield ub){
+ float2 *ux,float *flag,float2 *th_BC,float2 *ch_BC,vfield ub,float Bo,float th_s){
  // OLD CALCULATION OF THE NON-LINEAR TERM································
  // 1. Compute the wall-normal derivative 
  derivy(du.x,u.x);         derivy(du.y,u.y);          derivy(du.z,u.z); 
@@ -636,7 +678,7 @@ void init_nonlinear(vfield du,float2 *rhc,float2 *rux,vfield u,float2 *c,
  padForward(d2u_p.x,du.x);padForward(d2u_p.y,du.y);padForward(d2u_p.z,du.z);
  fftBackward(d2u_p.x);    fftBackward(d2u_p.y);    fftBackward(d2u_p.z);
  // 20.Add to the rhs of the NSE - Up·c·nabla(phi)
- calcNL_NSE_CH(d1u_p,c_p,d2u_p);  
+ calcNL_NSE_CH(d1u_p,c_p,d2u_p,Bo);  
  // NONLINEAR TERM FOR THE NSE··········································
  // 21.fftForward  of rhs
  fftForward(d1u_p.x);      fftForward(d1u_p.y);     fftForward(d1u_p.z);    
@@ -644,9 +686,9 @@ void init_nonlinear(vfield du,float2 *rhc,float2 *rux,vfield u,float2 *c,
  padBackward(du.x,d1u_p.x);padBackward(du.y,d1u_p.y);
  padBackward(du.z,d1u_p.z);
  // 23.Copy the 0,0 rhs.x to rux, and introduce the constant press grad
- dim3 block,grid; block.x=block_size; 
- block.x=block_size; grid.x=(NY+block.x-1)/block.x; grid.y=1;
- copyux_k<<<grid,block>>>(rux,du.x,u.x,ux);  
+ // dim3 block,grid; block.x=block_size; 
+ // block.x=block_size; grid.x=(NY+block.x-1)/block.x; grid.y=1;
+ // copyux_k<<<grid,block>>>(rux,du.x,u.x,ux);  
  // NONLINEAR TERM OF THE CH EQUATION···································
  // 24.Add to c3_p += -(1+s_c)*c_p, pass it to spectral
  calc_vphiCH(d3u_p.x,c_p); fftForward(d3u_p.x); padBackward(aux1,d3u_p.x);
@@ -659,25 +701,27 @@ void init_nonlinear(vfield du,float2 *rhc,float2 *rux,vfield u,float2 *c,
  calc_rhc(rhc,aux1); 
  // NONLINEAR BCON FOR THE CH EQUATIONS.................................
  // 28.Compute the Bcon and save to auxBC
- calc_BC_CH(BC_p,c_p); fftForwardBC(BC_p); padBackwardBC(auxBC,BC_p);
+ calc_BC_CH(BC_p,c_p,th_s); fftForwardBC(BC_p); padBackwardBC(auxBC,BC_p);
  // 29.Copy to the vectors the corresponding BCon
  CHECK_CUDART(cudaMemcpy(th_BC,auxBC,        2*NX*NZ*sizeof(float2),cudaMemcpyDeviceToDevice));
  CHECK_CUDART(cudaMemcpy(ch_BC,auxBC+2*NX*NZ,2*NX*NZ*sizeof(float2),cudaMemcpyDeviceToDevice));
  // OUTPUTS·····························································
  // 30.Output to the mean profile file (io_mp.txt) if flag[0]>0  
- if(flag[0]>0.0){
+ if(flag[2]>0.0){wrappln(c_pln,c_p); wrt_pln(c_pln,flag,th_s,Bo);}
+ if(flag[1]>0.0){wrapycg(d2u_p.x,d2u_p.y,c_p); wrt_ycg(d2u_p.x,d2u_p.y,flag,th_s,Bo);}
+ //if(flag[0]>0.0){
   // 30.1 Call kernel to write to io_mpr.txt file
-  wrt_mp(ux,flag);  
- }// end if
+  // wrt_mp(ux,flag);  
+ //}// end if
  // 31.Output to the rms profile file (io_rms.txt) if flag[1]>0
- if(flag[1]>0.0){
+ //if(flag[1]>0.0){
   // 31.0 Compute the (u-mean(u))^2 and save to dyu_p
-  wraprms(d2u_p,u_p,ux); 
+  //wraprms(d2u_p,u_p,ux); 
   // 31.1 Perform the Forward fft
-  fftForward(d2u_p.x);      fftForward(d2u_p.y);     fftForward(d2u_p.z);
+  //fftForward(d2u_p.x);      fftForward(d2u_p.y);     fftForward(d2u_p.z);
   // 31.2 Call kernel to write to io_rms.txt file
-  wrt_rms(d2u_p,flag); 
- }// end if
+  //wrt_rms(d2u_p,flag); 
+ //}// end if
  // ADAPT TO WALL-NORMAL FORMULATION···································
  // 32.Compute the derivative of hx and hz wrt y. Save to aux1, aux2
  derivy(aux1,du.x);         derivy(aux2,du.z);
@@ -690,9 +734,10 @@ void init_nonlinear(vfield du,float2 *rhc,float2 *rux,vfield u,float2 *c,
 // NONLINEAR FUNCTION....................................................../
 void nonlinear(vfield u,float2*c,float2*ux,vfield rhs,float2*rhc,float2 *rux
    ,float2*p,float2*g,float2*hp,float2*hg,float2*hc,float2*hux,float* flag
-   ,float2 *th_BC,float2 *ch_BC,vfield ub){
+   ,float2 *th_BC,float2 *ch_BC,vfield ub,float Bo,float th_s){
  // STEP 0. Compute the rhs and u at this time step      save old u !!!
- init_nonlinear(rhs,rhc,rux,u,c,ux,flag,th_BC,ch_BC,ub); copyVfield(ub,u);    
+ init_nonlinear(rhs,rhc,rux,u,c,ux,flag,th_BC,ch_BC,ub,Bo,th_s); 
+ copyVfield(ub,u);    
  // STEP 1. Compute the laplacian of phi, g, Save to u.x,u.z
  compLap(u.x,p);        compLap(u.z,g);             
  // STEP 2. Asemble the rhs of the phi, g, and save to u!
@@ -700,7 +745,7 @@ void nonlinear(vfield u,float2*c,float2*ux,vfield rhs,float2*rhc,float2 *rux
  // STEP 4. Copy the new non-linear terms to hp, hg
  copyBuffer(hp,rhs.x);  copyBuffer(hg,rhs.z); 
  // STEP 5. Assemble rhs of ux and save it to rux, save to hux old rux
- rhsux(rux,hux,ux);    
+ // rhsux(rux,hux,ux);    
  // STEP 6. Compute nabla2(c) -> aux1 (only if d_im<1)
  if(d_im<0.999999999999){
  Laplacian(aux1,c); 
@@ -724,7 +769,10 @@ void nonlinear(vfield u,float2*c,float2*ux,vfield rhs,float2*rhc,float2 *rux
 
 
 // SET NONLINEAR........................................................./
-void setNonlinear(void){ 
+void setNonlinear(double *y_h){
+  // Stuff
+  CHECK_CUDART(cudaMalloc(&y ,NY*sizeof(double)));
+  CHECK_CUDART(cudaMemcpy(y,y_h,NY*sizeof(double),cudaMemcpyHostToDevice));	
   // Setting the size of buffers
   size_t size_pad=NY*NXP*NZP*sizeof(float2);  
   // Allocate the fields c_p c3_p
@@ -749,6 +797,9 @@ void setNonlinear(void){
   CHECK_CUDART(cudaMalloc(&dc_p.x,size_pad));  // dc_p.x  -> dc/dx
   CHECK_CUDART(cudaMalloc(&dc_p.y,size_pad));  // dc_p.y  -> dv/dy
   CHECK_CUDART(cudaMalloc(&dc_p.z,size_pad));  // dc_p.z  -> dw/dz
+  // Allocate for a plane plot
+  size_pad=NY*NXP*sizeof(float);
+  CHECK_CUDART(cudaMalloc(&c_pln,size_pad));
   // Allocate auxiliary spectral field vectors
   size_pad=NY*NX*NZ*sizeof(float2);
   CHECK_CUDART(cudaMalloc(&aux1,size_pad));
@@ -776,8 +827,8 @@ void NonDestroy(void){   cudaFree(aux1);      cudaFree(aux2);
     cudaFree(d2u_p.x);   cudaFree(d2u_p.y);   cudaFree(d2u_p.z); 
     cudaFree(d3u_p.x);   cudaFree(d3u_p.y);   cudaFree(d3u_p.z);
     cudaFree(dc_p.x);    cudaFree(dc_p.y);    cudaFree(dc_p.z);
-    cudaFree(c_p);       cudaFree(aux3);    
-    cudaFree(BC_p);      cudaFree(auxBC);     return;
+    cudaFree(c_p);       cudaFree(aux3);      cudaFree(y);
+    cudaFree(BC_p);      cudaFree(auxBC);     cudaFree(c_pln); return;
 }// END NONLINEAR DESTROYER............................................../
 
 
@@ -854,7 +905,7 @@ void add_pert(vfield u,double *y){
 }// END FUNCTION TO INTRODUCE THE NOISE..................................../
 
 // INIT CH FIELD.........................................................../
-void initCh(float2 *ch, double *y_h){
+void initCh(float2 *ch, double *y_h,float th_s){
    // Read .bin files Careful they must have the same length u input
    if(restart>0){ printf("Reading initial condition of ch\n");
     rBufferBinary((float*)ch,"ch_s.bin",sizeof(float2),NY*NX*NZ);}
@@ -869,7 +920,7 @@ void initCh(float2 *ch, double *y_h){
    dim3 block,grid; block.x=block_size;
    grid.x=(2*NXP*NZP+block.x-1)/block.x; grid.y=NY;
    // Call kernel
-   add_drop_k<<<grid,block>>>((float*)c_p,y);
+   add_drop_k<<<grid,block>>>((float*)c_p,y,th_s);
    // fftForward and pad backward
    fftForward(c_p); padBackward(ch,c_p);  cudaFree(y);
    }// end no restarting

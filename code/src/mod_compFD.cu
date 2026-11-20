@@ -23,6 +23,7 @@ void init_cfd(double *y_h,double *LH_1,double *RH_1,double *DC1,
   for(int i=0;i<NY;i++){
      y_h[i]=2.0*(1.0-p_y)*(0.5-0.5*cos(0.5*PI2*double(i)/double(NY-1)))
 	       + 2.0*p_y*double(i)/double(NY-1) - 1.0;
+     y_h[i]=LY*0.5*(y_h[i]+1.0);
   }
   // COMPUTE MATRICES OF THE FIRST DERIVATIVE ++++++++++++++++++++++
   double *LH1=(double *)malloc(NY*NY*sizeof(double)); 

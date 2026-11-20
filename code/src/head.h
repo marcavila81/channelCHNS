@@ -19,19 +19,19 @@
 #define NX   256            // 2*m_x streamwise modes (must be even!)
 #define NZ   129            // m_z+1 spanwise   modes (must be odd! ) 
 // Length of the domain
-#define LX   (PI2/2.0)      // Length in x direction (in half heights)
-#define LZ   (PI2/2.0)      // Length in z direction (in half heights)
+#define LX   (5.0)         // Length in x direction (in initial radius)
+#define LY   (5.0)         // Length in y direction (in initial radius)
+#define LZ   (5.0)         // Length in z direction (in initial radius)
 // Initial conditions
-#define Rad  0.4            // radius of the drop w.r.t. half height
+#define Rad  1.0            // radius of the drop w.r.t. half height
 #define A_P  0.0            // magnitude of the streamwise perturbation
 #define eps  0.0            // magnitude of the random perturbation
+#define NBo  1              // Number of Bond numbers to consider
 
 /*++++++++++++++++++++++++++++ FLOW PARAMETERS ++++++++++++++++++++++++*/
-#define Re   0.1            // Reynolds number
-#define Cn   0.025          // Cahn number
-#define We   (0.0625*Re/Rad)// Weber number
-#define th_s 90.0           // Contact angle in degrees
-#define Fr   100.0          // Froude number
+#define Cn   0.025           // Cahn number
+#define Re   50.0            // Reynolds number
+#define Fr   1.0             // Froude number
 // Ratios
 #define rho_r 1.0           // density   ratio
 #define mu_r  1.0           // viscosity ratio			     
@@ -41,13 +41,15 @@
 			     
 /*+++++++++++++++++++++++++++ OUTPUT PARAMETERS +++++++++++++++++++++++*/
 // Mean profile file
-#define dt_mp 0.1           // time step to write
+#define dt_mp 0.05          // time step to write
 #define dc_mp 1             // Rows to store before saving
 // RMS file
-#define dt_rms 0.1          // time step to write
+#define dt_rms 0.05         // time step to write
 #define dc_rms 1            // Rows to store before saving
+// Plane file
+#define dt_pln 0.25         // files with a plane cut of the drop...
 // Binary files
-#define dt_bin 1.0          // Time steps to write to binary files
+#define dt_bin 50.0         // Time steps to write to binary files
 
 /*+++++++++++++++++++++++++++ IN&OUT PARAMETERS +++++++++++++++++++++++*/
 // Restart 
@@ -56,14 +58,14 @@
 /*++++++++++++++++++++++++ INTEGRATOR PARAMETERS ++++++++++++++++++++++*/
 #define d_im  1.0           // implicit parameter
 // Time-Step size
-#define dt    0.001         // time step size (constant)
-#define t_tot (10.0+dt)     // total time of the simulation
+#define dt    0.00005        // time step size (constant)
+#define t_tot (5.0+dt)      // total time of the simulation
 // Points after aliasing
 #define NXP (3*NX/2)        // Total physical streamwise points
 #define NZP (3*(NZ-1)/2+1)  // half of physical spanwise points
 			    
 /*+++++++++++++++++++++++++ DERIVED PARAMETERS ++++++++++++++++++++++++*/
-#define Pe (1.0/(3.0*Cn))  // Peclet number following Magaletti
+#define Pe (3.0/(1.0*Cn))   // Peclet number following Magaletti
 #define s_c (2.0*Cn*sqrt(Pe/(d_im*dt)))
 
 /*++++++++++++++++++++++ ARCHITECTURE PARAMETERS ++++++++++++++++++++++*/
@@ -142,15 +144,17 @@ void wBufferBinary_h(float* w,const char* file,int sz);
 void initField(vfield u);
 void wrt_mp(float2 *ux,float *flag);
 void wrt_rms(vfield d2u,float *flag);
+void wrt_pln(float *c_pln,float *flag,float th_s,float Bo);
 
 // INTEGRATE
-void integrate(vfield u,float2 *ch);
+void integrate(vfield u,float2 *ch,float Bo,float th_s);
 
 // MODE ZZ
 void main_ZZ(vfield u,float2 *p,float2 *g);
+void wrt_ycg(float2 *ycg,float2 *bbl,float *flag,float th_s,float Bo);
 
 // NONLINEAR
-void setNonlinear(void);
+void setNonlinear(double *y_h);
 void NonDestroy(void);
 void padForward(float2 *pad,float2 *u);
 void padBackward(float2 *u,float2 *pad);
@@ -158,11 +162,11 @@ void padBackwardBC(float2 *u,float2 *pad);
 void add_pert(vfield u,double *y);
 void add_drop(float2* ch,double *y);
 void init_nonlinear(vfield rhs,float2 *rhc,float2 *rux,vfield u,float2 *c,
-     float2 *ux,float* flag,float2 *th_BC,float2 *ch_BC,vfield ub);
+     float2 *ux,float* flag,float2 *th_BC,float2 *ch_BC,vfield ub,float Bo,float th_s);
 void nonlinear(vfield u,float2*c,float2*ux,vfield rhs,float2*rhc,
     float2 *rux,float2*p,float2*g,float2*hp,float2*hg,float2*hc,
-     float2*hux,float* flag,float2 *th_BC,float2 *ch_BC,vfield ub);
-void initCh(float2 *ch,double *y_h);
+     float2*hux,float* flag,float2 *th_BC,float2 *ch_BC,vfield ub,float Bo,float th_s);
+void initCh(float2 *ch,double *y_h,float th_s);
 
 // UTILS
 void normalize(float2* u,float norm,size_t elements);

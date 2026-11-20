@@ -31,7 +31,6 @@ static cublasHandle_t cublasHandle; static float *intdy, *Qa_h;
 
 
 
-
 /*+++++++++++++++++++++++++++ MAIN FUNCTION ++++++++++++++++++++++++++++++*/
 // CUBLAS CHECK------------------------------------------------------------/
 void cublasCheck(cublasStatus_t error, const char* function ){
@@ -67,8 +66,10 @@ void setCublas(double *y_h){
 
 
 // DESTROYER CUBLAS......................................................../
-void CublasDestroy(void){cudaFree(intdy); free(Qa_h);
+void CublasDestroy(void){cudaFree(intdy); free(Qa_h); 
+                         cublasDestroy(cublasHandle); return;
 }// END OF DESTROYER CUBLAS................................................/
+
 
 
 // PERFORM DOT PRODUCT USING CUBLAS----------------------------------------/
@@ -91,3 +92,27 @@ void main_ZZ(vfield u,float2 *p,float2 *g){
   // Call the kernel
   main_ZZ_k<<<grid,block>>>(u.x,u.y,u.z,p,g);
 }// END MAIN FUNCTION TO INTEGRATE MODE ZZ................................./
+
+
+// MAIN FUNCTION TO COMPUTE THE POSITION OF THE CENTER OF GRAVITY........../
+void wrt_ycg(float2 *ycg,float2 *bbl,float *flag,float th_s,float Bo){
+   float S_ycg,S_Vl;
+   // Sum up the position
+   cublasCheck(cublasSasum(cublasHandle,NY*NXP*2*NZP,(float*)ycg,1,&S_ycg),"Tr");
+   cublasCheck(cublasSasum(cublasHandle,NY*NXP*2*NZP,(float*)bbl,1,&S_Vl),"Tr");
+   // Normalize the two values
+   S_ycg=S_ycg/S_Vl;   S_Vl=float(LX*LY*LZ)*S_Vl/float(NY*NXP*(2*NZP-2)); 
+   // Initialize
+   FILE *ptrf;  char Nme[256]={0};
+   // Write
+   sprintf(Nme,"./Results/TH_%03.2f_BO_%02.2f/ycg_%03.2f_%02.2f.txt",th_s,Bo,th_s,Bo);
+   // Open the file
+   ptrf= fopen(Nme,"a");
+   // Write the two values
+   fprintf(ptrf,"%.8e  %.8e  %.8e\n",flag[1],S_ycg,S_Vl); fclose(ptrf); return;
+}// END MAIN FUNCTION TO COMPUTE THE POSITION OF THE CENTER OF GRAVITY...../
+
+
+
+
+

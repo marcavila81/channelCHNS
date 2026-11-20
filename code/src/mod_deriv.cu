@@ -81,13 +81,13 @@ static __global__ void u_to_g_k(float2 *g,float2 *ux,float2 *uz){
   // Index of wavenumbers
   int ix=k/NZ; ix=ix<NX/2 ? ix:ix-NX; int l=k%NZ; 
   // Wavelength
-  float kz=(PI2/LZ)*(float(l)); float kx=(PI2/LX)*(float(ix));  
+  float kz=(PI2/LZ)*(float(l)); float kx=(PI2/LX)*(float(ix));
   // Boundary condition
   if(i<1 || i>=NY-1){g[h].x=0.0;g[h].y=0.0;}
   // Else
-  else{
+  else{  
   // Register value to g
-  g[h].x=-kz*ux[h].y + kx*uz[h].y;
+  g[h].x=-kz*ux[h].y + kx*uz[h].y;  
   g[h].y= kz*ux[h].x - kx*uz[h].x;
   } // end else
 }// END KERNEL TO COMPUTE PHI FROM WALL NORMAL VELOCITY..................../
@@ -195,7 +195,7 @@ static __global__ void derivt_k(float *grad,float *uK,float *ubK){
   if(k>=2*NX*NZ || i>=NY){return;}  int h=i*2*NX*NZ+k;
   // Read data
   float u=uK[h], ub=ubK[h], drv;
- // Compute derivative. Take care of mode 0...
+  // Compute derivative. Take care of mode 0...
   if(k<2){drv=0.0;}else{drv=(u-ub)/float(dt);} grad[h]=drv; return;
 }// END KERNEL TO COMPUTE vphi............................................/
 

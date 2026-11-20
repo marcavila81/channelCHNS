@@ -10,7 +10,7 @@ static __global__ void initux_k(float2 *ux,double *y){
   // Index & Stopper
   int i=blockIdx.x*blockDim.x+threadIdx.x; if(i>=NY){return;} int h=i*NX*NZ;
   // Set Values
-  ux[h].x=float(y[i]);     ux[h].y=0.0;
+  ux[h].x=0.0;     ux[h].y=0.0;
 }// KERNEL FOR MEAN PROFILE INITIALIZATION................................./
 
 
@@ -51,6 +51,7 @@ void setIO(double *y_h){
   // Allocate y
   CHECK_CUDART(cudaMalloc(&y ,NY*sizeof(double)));
   CHECK_CUDART(cudaMemcpy(y,y_h,NY*sizeof(double),cudaMemcpyHostToDevice));
+  return;
   // Open file of the Mean Profile·············
   ptr_mp = fopen("./io_mp.txt","w");
   // Write the first time step
@@ -76,7 +77,7 @@ void setIO(double *y_h){
 
 
 // DESTROY IN OUT........................................................../
-void IODestroy(void){cudaFree(y); cudaFree(vec_mp); fclose(ptr_mp); 
+void IODestroy(void){cudaFree(y); return; cudaFree(vec_mp); fclose(ptr_mp); 
                                   cudaFree(vec_rms);fclose(ptr_rms); return;
 }// END DESTROYER IN OUT.................................................../
 
@@ -225,6 +226,11 @@ void wrt_rms(vfield d2u,float *flag){
 }// END WRITE RMS TO THE FILE............................................../
 
 
-
-
-
+// WRITE THE PLANE........................................................./
+void wrt_pln(float *c_pln,float *flag,float th_s,float Bo){
+ // Name
+ char file[512];   float t=flag[2]; 
+ sprintf(file,"./Results/TH_%03.2f_BO_%02.2f/pln_%02.2f.bin",th_s,Bo,t);
+ // Write
+ wBufferBinary((float *)c_pln,file,sizeof(float),NY*NXP); return;
+}// END WRITE THE PLANE..................................................../
