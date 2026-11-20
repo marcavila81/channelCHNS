@@ -12,8 +12,14 @@ int main(int argc, const char* argv[]){
  printf("\n++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
  printf("\n++++++++++++++  Welcome to nsWallChan in CUDA  +++++++++++++++");
  printf("\n++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
- // SINGLE CASE: explicit contact angle and physical Bond number (head.h)
- float th_s = TH_S, Bo = BO;
+ // SINGLE CASE: case inputs (contact angle in degrees, physical Bond number).
+ // Bo = physical Bond number; We = internal Weber/capillary slot:
+ //     Bo = (rho_r-1)*LC^2*We/Fr^2  =>  We = Bo*Fr^2/((rho_r-1)*LC^2)
+ // Buoyancy uses (rho_r-1)/Fr^2; the capillary term uses 1/(Cn*We).
+ // Output file names keep BO but print the physical Bo. The old Fritz-based
+ // critical estimate Boc = 0.564*(th_s*pi/360)^2/(1-rho_r) - 0.1 is kept for
+ // reference only: it must NOT be computed anywhere (singular for rho_r = 1).
+ float th_s = 20.0, Bo = 1.0;
  // Matched densities -> no buoyancy -> the physical Bond number must be 0
  if(rho_r==1.0){
    printf("\n NOTE: matched densities (rho_r = 1): no buoyancy, setting Bo = 0\n");
@@ -22,10 +28,10 @@ int main(int argc, const char* argv[]){
  // Internal Weber number (capillary slot): Bo = (rho_r-1)*LC^2*We/Fr^2
  float We = (rho_r==1.0) ? float(WE_REF)
               : Bo*float(Fr)*float(Fr)/(float(rho_r-1.0)*float(LC)*float(LC));
- printf("\n Case: TH_S=%03.2f  Bo=%02.2f (physical)  We=%.6f (Weber slot)\n",th_s,Bo,We);
+ printf("\n Case: th_s=%03.2f  Bo=%02.2f (physical)  We=%.6f (Weber slot)\n",th_s,Bo,We);
  // Startup assertion: the case values must be finite (guards against bad defines)
  if(!isfinite(th_s) || !isfinite(Bo) || !isfinite(We)){
-   fprintf(stderr,"\n ERROR: non-finite case values: TH_S=%f, BO=%f, We=%f -- check the defines in head.h\n",(double)th_s,(double)Bo,(double)We);
+   fprintf(stderr,"\n ERROR: non-finite case values: th_s=%f, Bo=%f, We=%f -- check the inputs in main.cu\n",(double)th_s,(double)Bo,(double)We);
    exit(1);
  }
  // SET DEVICE AND START CLOCK
