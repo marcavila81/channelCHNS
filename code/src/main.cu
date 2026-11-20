@@ -12,6 +12,14 @@ int main(int argc, const char* argv[]){
  printf("\n++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
  printf("\n++++++++++++++  Welcome to nsWallChan in CUDA  +++++++++++++++");
  printf("\n++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
+ // SINGLE CASE: explicit contact angle and Bond number (defines in head.h)
+ float th_s = TH_S, Bo = BO_VALUE;
+ // Startup assertion: the case values must be finite (guards against bad
+ // defines in head.h, e.g. BO_VALUE left at 0)
+ if(!isfinite(th_s) || !isfinite(Bo)){
+   fprintf(stderr,"\n ERROR: non-finite case values: TH_S=%f, BO_VALUE=%f -- check the defines in head.h\n",(double)th_s,(double)Bo);
+   exit(1);
+ }
  // SET DEVICE AND START CLOCK
  int dev=3;  clock_t begin = clock(); struct stat st = {0};
  printf("\nSetting device %d\n",dev); CHECK_CUDART(cudaSetDevice(dev));
@@ -36,18 +44,9 @@ int main(int argc, const char* argv[]){
  // Setters
  setFft(sizes);  setIO(y_h);   setNonlinear(y_h);  setDeriv(D_h);
  setLinear(L_h,R_h,L2_h,R2_h,FD_h); setBCon(); setCublas(y_h);
- // Initialization: vector of angles of attack
- float vth[4]={20,10,160,170};  float Boc,th_s,Bo;
- int lnvth=sizeof(vth)/sizeof(vth[0]); 
  // Create the folder where to save
  if(stat("./Results/",&st)==-1){mkdir("./Results/",0700);}
- // LOOP 1: ON THE CONTACT ANGLE++++++++++++++++++++++++++++++++++++++++++++
- for(int ith=0;ith<lnvth;ith++){th_s=vth[ith]; 
- // Alleged critical Bond number
- Boc=0.564*(th_s*float(PI2)/float(360))*(th_s*float(PI2)/float(360))/(1.0-float(rho_r));
- // LOOP 2: ON THE BOND NUMBER++++++++++++++++++++++++++++++++++++++++++++++
- for(int iBo=0;iBo<1;iBo++){Bo=Boc-0.1+0.1*iBo;
- // Create the folder where to save
+ // Create the case folder where to save
  sprintf(Nme,"./Results/TH_%03.2f_BO_%02.2f/",th_s,Bo);
  if(stat(Nme,&st)==-1){mkdir(Nme,0700);}
  // Initialize the velocity field and the scalar field
@@ -56,8 +55,6 @@ int main(int argc, const char* argv[]){
  integrate(u,ch,Bo,th_s);   
  // OUTRO ++++++++++++++++++++++++++++++++++++++++++++++++++++
  printf("\n FINISHED TH=%03.2f AND BO=%02.2f\n",th_s,Bo);
- }// END LOOP 2+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- }// END LOOP 1+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  // Last velocity field 
  sprintf(Nme,"./Results/TH_%03.2f_BO_%02.2f/ch.bin",th_s,Bo);
  wBufferBinary((float*)ch,Nme,sizeof(float2),NY*NX*NZ);

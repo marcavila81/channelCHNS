@@ -26,7 +26,14 @@
 #define Rad  1.0            // radius of the drop w.r.t. half height
 #define A_P  0.0            // magnitude of the streamwise perturbation
 #define eps  0.0            // magnitude of the random perturbation
-#define NBo  1              // Number of Bond numbers to consider
+// Single-case run: explicit case parameters
+#define TH_S      20.0    // case contact angle (degrees)
+#define BO_VALUE  1.0     // Bond/Weber number of the case (explicit)
+/* Bo is now always explicit (BO_VALUE above). The old Fritz-based
+   critical estimate
+       Boc = 0.564*(TH_S*pi/360)^2/(1-rho_r) - 0.1
+   is kept here for reference only: it must NOT be computed anywhere
+   in the code (it is singular for rho_r = 1). */
 
 /*++++++++++++++++++++++++++++ FLOW PARAMETERS ++++++++++++++++++++++++*/
 #define Cn   0.025           // Cahn number
