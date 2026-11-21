@@ -124,7 +124,7 @@ int main(int argc, const char* argv[]){
    char dfile[300];
    sprintf(dfile,"%sdiag_v_int.txt",Nme);
    FILE *f3=fopen(dfile,"w");
-   if(f3){ fprintf(f3,"# t  umax  umax_cap  u_int_rms  u_int_rms_cap  Ifrac\n"); fclose(f3);}
+   if(f3){ fprintf(f3,"# t  umax_cap  u_int_rms_cap  Ifrac\n"); fclose(f3);}
    setDiagDir(Nme);
  }
  // Initialize the velocity field and the scalar field

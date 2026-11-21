@@ -242,17 +242,16 @@ static float  diag_umax=0.0f, diag_urms=0.0f, diag_I0=0.0f, diag_I0_ref=0.0f;
 void setDiagDir(const char* nme){ snprintf(diag_dir,sizeof(diag_dir),"%s",nme); }
 void setDiagVals(float umax,float urms,float I0){ diag_umax=umax; diag_urms=urms; diag_I0=I0; }
 // wrt_diag owns ONLY the file write of diag_v_int.txt (append mode, like wrt_ycg).
-// Columns: t  umax  umax_cap  u_int_rms  u_int_rms_cap  Ifrac
-// Scale note: We = rho_r U^2 Rad/sigma, i.e. capillary velocity
-// U_cap = 1/sqrt(We), so capillary-scaled values are umax*sqrt(We) and
-// u_int_rms*sqrt(We).
+// Columns (capillary units only): t  umax_cap  u_int_rms_cap  Ifrac
+// Scale: We = rho_r U^2 Rad/sigma, capillary velocity U_cap = 1/sqrt(We),
+// so umax_cap = umax*sqrt(We) and u_int_rms_cap = u_int_rms*sqrt(We).
 void wrt_diag(float *flag,float We){
  char file[512];   float t=flag[1];
  sprintf(file,"%sdiag_v_int.txt",diag_dir);
  if(diag_I0_ref==0.0f && diag_I0>0.0f) diag_I0_ref=diag_I0;   // I0 at first event
  float Ifrac=(diag_I0_ref>0.0f)? diag_I0/diag_I0_ref : 1.0f;
  FILE *ptr=fopen(file,"a");
- fprintf(ptr,"%.8e  %.8e  %.8e  %.8e  %.8e  %.8e\n",
-         t,diag_umax,diag_umax*sqrtf(We),diag_urms,diag_urms*sqrtf(We),Ifrac);
+ fprintf(ptr,"%.8e  %.8e  %.8e  %.8e\n",
+         t,diag_umax*sqrtf(We),diag_urms*sqrtf(We),Ifrac);
  fclose(ptr); return;
 }// END WRITE DIAG......................................................../
