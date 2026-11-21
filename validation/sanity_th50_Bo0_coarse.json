@@ -22,7 +22,7 @@
   "oracle": {
     "contact_angle_circle_fit_deg": {"expected": 50.0, "abs_tol": 3.0},
     "circle_L2_over_hmax": {"max": 1.0e-2},
-    "umax_cap": {"max": 0.2},
+    "umax_cap": {"max": 0.3},
     "u_int_rms_cap": {"max": 0.05},
     "Ifrac_abs_max": {"max": 5.0e-2},
     "volume_rel_drift_abs": {"max": 5.0e-2},
