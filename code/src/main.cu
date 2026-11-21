@@ -7,14 +7,43 @@
 -  Contact: daniel.moron@zarm.uni-bremen.de
 -  Date   : 17/07/2024                                                    */
 #include"head.h"
+#include <string.h>
 /*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
 int main(int argc, const char* argv[]){
  printf("\n++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
  printf("\n++++++++++++++  Welcome to nsWallChan in CUDA  +++++++++++++++");
  printf("\n++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
- // SINGLE CASE: th_s and Bo come from the input defines TH_S and BO in head.h
- // (see the Bo/We relation comment there)
- float th_s = TH_S, Bo = BO;
+ // CASE INPUTS FROM FILE (mandatory, no defaults): ./wnCH_NS [input_file]
+ const char *fname = (argc>1) ? argv[1] : "input.txt";
+ float th_s=0.0, Bo=0.0, v_ttot=0.0, v_mp=0.0, v_rms=0.0, v_pln=0.0, v_bin=0.0;
+ int seen[7]={0,0,0,0,0,0,0};
+ FILE *fp=fopen(fname,"r");
+ if(!fp){
+   fprintf(stderr,"\n ERROR: cannot open input file '%s' -- this code requires an input file (usage: ./wnCH_NS [input_file])\n",fname);
+   exit(1);
+ }
+ char line[256],key[64]; double val;
+ while(fgets(line,sizeof(line),fp)){
+   if(line[0]=='#' || line[0]=='\n' || line[0]=='\r') continue;
+   if(sscanf(line,"%63s %lf",key,&val)!=2){
+     fprintf(stderr,"\n ERROR: malformed line in input file '%s': %s",fname,line); exit(1);
+   }
+   if     (!strcmp(key,"th_s"))  {th_s=val;  seen[0]=1;}
+   else if(!strcmp(key,"Bo"))    {Bo=val;    seen[1]=1;}
+   else if(!strcmp(key,"t_tot")) {v_ttot=val;seen[2]=1;}
+   else if(!strcmp(key,"dt_mp")) {v_mp=val;  seen[3]=1;}
+   else if(!strcmp(key,"dt_rms")){v_rms=val; seen[4]=1;}
+   else if(!strcmp(key,"dt_pln")){v_pln=val; seen[5]=1;}
+   else if(!strcmp(key,"dt_bin")){v_bin=val; seen[6]=1;}
+   else fprintf(stderr,"\n WARNING: unknown key '%s' in '%s' ignored\n",key,fname);
+ }
+ fclose(fp);
+ const char *keys[7]={"th_s","Bo","t_tot","dt_mp","dt_rms","dt_pln","dt_bin"};
+ for(int i=0;i<7;i++) if(!seen[i]){
+   fprintf(stderr,"\n ERROR: input file '%s' is missing required key '%s'\n",fname,keys[i]); exit(1);
+ }
+ // Runtime run/output parameters (extern in head.h, used in mod_integrate.cu)
+ t_tot=v_ttot; dt_mp=v_mp; dt_rms=v_rms; dt_pln=v_pln; dt_bin=v_bin;
  // Matched densities -> no buoyancy -> the physical Bond number must be 0
  if(rho_r==1.0){
    printf("\n NOTE: matched densities (rho_r = 1): no buoyancy, setting Bo = 0\n");
@@ -24,9 +53,12 @@ int main(int argc, const char* argv[]){
  float We = (rho_r==1.0) ? float(WE_REF)
               : Bo*float(Fr)*float(Fr)/(float(rho_r-1.0)*float(LC)*float(LC));
  printf("\n Case: th_s=%03.2f  Bo=%02.2f (physical)  We=%.6f (Weber slot)\n",th_s,Bo,We);
- // Startup assertion: the case values must be finite (guards against bad defines)
- if(!isfinite(th_s) || !isfinite(Bo) || !isfinite(We)){
-   fprintf(stderr,"\n ERROR: non-finite case values: th_s=%f, Bo=%f, We=%f -- check TH_S/BO in head.h\n",(double)th_s,(double)Bo,(double)We);
+ printf(" Run: t_tot=%f  dt_mp=%f dt_rms=%f dt_pln=%f dt_bin=%f\n",t_tot,dt_mp,dt_rms,dt_pln,dt_bin);
+ // Startup assertion: all case values must be valid (finite, positive intervals)
+ if(!isfinite(th_s) || !isfinite(Bo) || !isfinite(We) || !(t_tot>0.0f) ||
+    !(dt_mp>0.0f) || !(dt_rms>0.0f) || !(dt_pln>0.0f) || !(dt_bin>0.0f)){
+   fprintf(stderr,"\n ERROR: invalid case values from '%s': th_s=%f Bo=%f We=%f t_tot=%f dt_mp=%f dt_rms=%f dt_pln=%f dt_bin=%f\n",
+           fname,(double)th_s,(double)Bo,(double)We,(double)t_tot,(double)dt_mp,(double)dt_rms,(double)dt_pln,(double)dt_bin);
    exit(1);
  }
  // SET DEVICE AND START CLOCK

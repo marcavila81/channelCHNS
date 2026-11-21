@@ -4,6 +4,8 @@
 // AUTHOR: ----------- Daniel Morón Montesdeoca
 // DATE:   ----------- 01/08/2024
 /*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
+/* Runtime run/output parameters, set from the input file in main.cu -------*/
+float t_tot, dt_mp, dt_rms, dt_pln, dt_bin;
 /*++++++++++++++++++++++++++++++ KERNELS +++++++++++++++++++++++++++++++++*/
 // KERNEL TO COPY TO UX EQUATION........................................../
 static __global__ void copyuxb_k(float2 *ux,float2 *u){  

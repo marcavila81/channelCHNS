@@ -32,18 +32,28 @@
 #define Fr   1.0             // Froude number
 #define WE_REF 1.0           // reference Weber number (capillary slot 1/(Cn*We)) used if rho_r==1
 #define LC   (LY/2.0)       // characteristic length for the Bond number (half channel height)
-#define TH_S 20.0            // case contact angle (degrees)
-#define BO   1.0             // physical Bond number of the case (input)
-/* Bo (physical, input BO) vs We (internal Weber/capillary slot), up to O(1) consts:
+/* CASE INPUTS ARE READ AT RUNTIME from an input file (mandatory, no defaults):
+   usage: ./wnCH_NS [input_file]      (default input file: ./input.txt)
+   Format: one 'key value' per line, '#' starts a comment. Required keys:
+       th_s    case contact angle (degrees)
+       Bo      physical Bond number of the case
+       t_tot   total simulation time
+       dt_mp   write interval, mean profile  } output write rates,
+       dt_rms  write interval, RMS profiles   } runtime inputs declared
+       dt_pln  write interval, plane cuts     } extern below
+       dt_bin  write interval, binary dumps   }
+   If the file cannot be opened or a key is missing, the code prints an error
+   and exits. Compile-time setup (grid, dt, Re, Cn, rho_r, ...) stays in the
+   #defines of this file.
+   Bo (physical) vs We (internal Weber/capillary slot), up to O(1) consts:
        Bo = (rho_r-1)*LC^2*We/Fr^2   =>   We = Bo*Fr^2/((rho_r-1)*LC^2)
-   Buoyancy uses (rho_r-1)/Fr^2; the capillary term uses 1/(Cn*We).
-   Output file names keep BO but print the physical Bo (the variable).
    If rho_r == 1 (matched densities) there is no buoyancy: Bo is forced to 0
-   at runtime (with a printf) and We = WE_REF. The old Fritz-based critical
-   estimate
-       Boc = 0.564*(TH_S*pi/360)^2/(1-rho_r) - 0.1
+   at runtime (with a printf) and We = WE_REF. Output file names keep BO but
+   print the physical Bo. The old Fritz-based critical estimate
+       Boc = 0.564*(th_s*pi/360)^2/(1-rho_r) - 0.1
    is kept for reference only: it must NOT be computed anywhere in the code
    (it is singular for rho_r = 1). */
+extern float t_tot, dt_mp, dt_rms, dt_pln, dt_bin;  // set from input file in main
 // Ratios
 #define rho_r 1.0           // density   ratio
 #define mu_r  1.0           // viscosity ratio			     
@@ -52,16 +62,10 @@
 #define p_y  0.0            // p_y==1-> uniform grid, p_y=0->Chebyshev
 			     
 /*+++++++++++++++++++++++++++ OUTPUT PARAMETERS +++++++++++++++++++++++*/
-// Mean profile file
-#define dt_mp 0.05          // time step to write
-#define dc_mp 1             // Rows to store before saving
-// RMS file
-#define dt_rms 0.05         // time step to write
-#define dc_rms 1            // Rows to store before saving
-// Plane file
-#define dt_pln 0.25         // files with a plane cut of the drop...
-// Binary files
-#define dt_bin 50.0         // Time steps to write to binary files
+// Write intervals dt_mp, dt_rms, dt_pln, dt_bin are RUNTIME inputs from the
+// input file (see extern declaration above), not defines.
+#define dc_mp 1             // Rows to store before saving (mean profile)
+#define dc_rms 1            // Rows to store before saving (RMS)
 
 /*+++++++++++++++++++++++++++ IN&OUT PARAMETERS +++++++++++++++++++++++*/
 // Restart 
@@ -71,7 +75,7 @@
 #define d_im  1.0           // implicit parameter
 // Time-Step size
 #define dt    0.00005        // time step size (constant)
-#define t_tot (5.0+dt)      // total time of the simulation
+// t_tot (total simulation time) is a RUNTIME input from the input file
 // Points after aliasing
 #define NXP (3*NX/2)        // Total physical streamwise points
 #define NZP (3*(NZ-1)/2+1)  // half of physical spanwise points
