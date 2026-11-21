@@ -115,7 +115,7 @@ int main(int argc, const char* argv[]){
  // Run-info header: prepended to the ycg file, and stored as run_info.txt
  // next to the binary outputs (raw .bin files stay headerless)
  { char ycgfile[300], rif[300];
-   sprintf(ycgfile,"%sycg_%03.2f_%02.2f.txt",Nme,th_s,Bo);
+   sprintf(ycgfile,"%sycg.txt",Nme);
    sprintf(rif,"%srun_info.txt",Nme);
    FILE *f1=fopen(ycgfile,"w"); if(f1){write_run_header(f1,th_s,Bo,We); fclose(f1);}
    FILE *f2=fopen(rif,"w");     if(f2){write_run_header(f2,th_s,Bo,We); fclose(f2);}
