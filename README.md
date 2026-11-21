@@ -1,5 +1,6 @@
 # channelCHNS
-Original developer: Dr.-Ing. Daniel Morón Montesdeoca while at ZARM, University of Bremen
+Current developer & maintainer: Prof. Dr. Marc Avila with help of Vibe Code (Mistral Large 4)
+Developer of the original solver: Dr.-Ing. Daniel Morón Montesdeoca while at ZARM, University of Bremen
 Two-phase flow code for a Cartesian channel geometry 
 Formulation: wall-normal vorticit-velocity
 Discretisation: Fourier-Fourier + compact finite differences
