@@ -40,3 +40,30 @@ and output rates come from the input file, so sweeps are done externally, e.g.:
       printf 'th_s %s\nBo %s\nt_tot 5.0\ndt_mp 0.05\ndt_rms 0.05\ndt_pln 0.25\ndt_bin 50.0\noutdir run_th%s_Bo%s\n' $th $Bo $th $Bo > case.in
       ./wnCH_NS case.in
     done; done
+
+Some `head.h` setup constants can be overridden at build time without editing
+the source, e.g. a cheap coarse run:
+
+    make -C code FLAGS="-DNY=65 -DNX=64 -DNZ=33 -DCn=0.05 -Ddt=1e-4"
+
+## Restarting
+The final fields `ch.bin ux.bin uy.bin uz.bin` in the output directory are the
+restart state (spectral representation). To restart, copy them into the run
+directory as `ch_s.bin ux_s.bin uy_s.bin uz_s.bin` and rebuild with
+`#define restart 1` in `code/src/head.h` (`restart 0` = fresh start).
+
+## Validation and sanity checks
+See `validation/README.md` for details. Quick start (requires a GPU build):
+
+    cd validation
+    # full validation case (reference results in validation/reference/):
+    python run_case.py case1_static_cap_th50_Bo0.json --workdir /path/to/run
+    # fast smoke test for solver changes (~seconds on one GPU):
+    python run_case.py sanity_th50_Bo0_coarse.json --workdir /path/to/sanity \
+        --build-flags "-DNY=65 -DNX=64 -DNZ=33 -DCn=0.05 -Ddt=1e-4"
+
+`run_case.py` writes `case.in` from the case JSON, runs the binary, checks that
+all expected outputs exist, and runs `analysis.py`, which prints each metric
+with PASS/FAIL against the case oracle and the delta vs the reference metrics,
+and writes `metrics.json` + plots into the output directory. Exit code 0 means
+the oracle passed.
