@@ -19,8 +19,8 @@ static void write_run_header(FILE *f,float th_s,float Bo,float We){
   fprintf(f,"# grid         : NY=%d NX=%d NZ=%d (NXP=%d NZP=%d), domain LX=%g LY=%g LZ=%g\n",
           NY,NX,NZ,NXP,NZP,(double)LX,(double)LY,(double)LZ);
   fprintf(f,"# integrator   : dt=%g t_tot=%g d_im=%g\n",(double)dt,(double)t_tot,(double)d_im);
-  fprintf(f,"# parameters   : Cn=%g Re=%g Fr=%g rho_r=%g mu_r=%g WE_REF=%g LC=%g\n",
-          (double)Cn,(double)Re,(double)Fr,(double)rho_r,(double)mu_r,(double)WE_REF,(double)LC);
+  fprintf(f,"# parameters   : Cn=%g Re=%g Fr=%g rho_r=%g mu_r=%g WE_REF=%g Rad=%g\n",
+          (double)Cn,(double)Re,(double)Fr,(double)rho_r,(double)mu_r,(double)WE_REF,(double)Rad);
   fprintf(f,"# case         : th_s=%g Bo=%g (physical) We=%g (Weber slot)\n",
           (double)th_s,(double)Bo,(double)We);
   fprintf(f,"# output rates : dt_mp=%g dt_rms=%g dt_pln=%g dt_bin=%g\n",
@@ -71,9 +71,10 @@ int main(int argc, const char* argv[]){
    printf("\n NOTE: matched densities (rho_r = 1): no buoyancy, setting Bo = 0\n");
    Bo=0.0;
  }
- // Internal Weber number (capillary slot): Bo = (rho_r-1)*LC^2*We/Fr^2
+ // Internal Weber number (capillary slot); lengths in units of the drop
+ // radius Rad:  Bo = (rho_r-1)*Rad^2*We/Fr^2
  float We = (rho_r==1.0) ? float(WE_REF)
-              : Bo*float(Fr)*float(Fr)/(float(rho_r-1.0)*float(LC)*float(LC));
+              : Bo*float(Fr)*float(Fr)/(float(rho_r-1.0)*float(Rad)*float(Rad));
  printf("\n Case: th_s=%03.2f  Bo=%02.2f (physical)  We=%.6f (Weber slot)\n",th_s,Bo,We);
  printf(" Run: t_tot=%f  dt_mp=%f dt_rms=%f dt_pln=%f dt_bin=%f\n",t_tot,dt_mp,dt_rms,dt_pln,dt_bin);
  // Startup assertion: all case values must be valid (finite, positive intervals)

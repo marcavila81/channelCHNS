@@ -36,7 +36,6 @@
 #define Re   50.0            // Reynolds number
 #define Fr   1.0             // Froude number
 #define WE_REF 1.0           // reference Weber number (capillary slot 1/(Cn*We)) used if rho_r==1
-#define LC   (LY/2.0)       // characteristic length for the Bond number (half channel height)
 /* CASE INPUTS ARE READ AT RUNTIME from an input file (mandatory, no defaults):
    usage: ./wnCH_NS [input_file]      (default input file: ./case.in)
    Format: one 'key value' per line, '#' starts a comment. Required keys:
@@ -50,8 +49,10 @@
    If the file cannot be opened or a key is missing, the code prints an error
    and exits. Compile-time setup (grid, dt, Re, Cn, rho_r, ...) stays in the
    #defines of this file.
-   Bo (physical) vs We (internal Weber/capillary slot), up to O(1) consts:
-       Bo = (rho_r-1)*LC^2*We/Fr^2   =>   We = Bo*Fr^2/((rho_r-1)*LC^2)
+   Bo (physical) vs We (internal Weber/capillary slot), up to O(1) consts.
+   Lengths are in units of the drop radius (Rad), so the characteristic
+   length is Rad:
+       Bo = (rho_r-1)*Rad^2*We/Fr^2   =>   We = Bo*Fr^2/((rho_r-1)*Rad^2)
    If rho_r == 1 (matched densities) there is no buoyancy: Bo is forced to 0
    at runtime (with a printf) and We = WE_REF. Output file names keep BO but
    print the physical Bo. The old Fritz-based critical estimate

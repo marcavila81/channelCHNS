@@ -243,9 +243,9 @@ void setDiagDir(const char* nme){ snprintf(diag_dir,sizeof(diag_dir),"%s",nme); 
 void setDiagVals(float umax,float urms,float I0){ diag_umax=umax; diag_urms=urms; diag_I0=I0; }
 // wrt_diag owns ONLY the file write of diag_v_int.txt (append mode, like wrt_ycg).
 // Columns: t  umax  umax_cap  u_int_rms  u_int_rms_cap  Ifrac
-// Scale note: assumed We = rho_r U^2 Rad/sigma, i.e. capillary velocity
+// Scale note: We = rho_r U^2 Rad/sigma, i.e. capillary velocity
 // U_cap = 1/sqrt(We), so capillary-scaled values are umax*sqrt(We) and
-// u_int_rms*sqrt(We). TO BE CONFIRMED with D. Morón Montesdeoca.
+// u_int_rms*sqrt(We).
 void wrt_diag(float *flag,float We){
  char file[512];   float t=flag[1];
  sprintf(file,"%sdiag_v_int.txt",diag_dir);
