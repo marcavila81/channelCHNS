@@ -24,15 +24,19 @@ Input format: one `key value` per line, `#` starts a comment. Required keys:
     dt_pln  # write interval: plane cuts
     dt_bin  # write interval: binary dumps
 
-If the file is missing or a key is absent, the code prints an error and exits.
-Each run writes to `./Results/TH_<th_s>_BO_<Bo>/` (Bo = physical Bond number;
-if `rho_r = 1` in `head.h`, Bo is forced to 0 since there is no buoyancy).
+If the file is missing or a required key is absent, the code prints an error
+and exits. Optional key: `outdir <dir>` sets the output directory (default
+`output`); all results go directly into it (no TH/Bo subfolder):
+`run_info.txt` (run header), `ycg.txt`, `diag_v_int.txt`, `pln_*.bin`,
+`ch_*.bin`, and the final `ch.bin ux.bin uy.bin uz.bin` (restart fields).
+Bo = physical Bond number; if `rho_r = 1` in `head.h`, Bo is forced to 0 since
+there is no buoyancy.
 
 Numerical/physics setup (grid, `dt`, `Re`, `Cn`, `rho_r`, `mu_r`, ...) is set
 via the `#define`s in `code/src/head.h` and needs a recompile. Case parameters
 and output rates come from the input file, so sweeps are done externally, e.g.:
 
     for th in 20 40; do for Bo in 0.5 1.0; do
-      printf 'th_s %s\nBo %s\nt_tot 5.0\ndt_mp 0.05\ndt_rms 0.05\ndt_pln 0.25\ndt_bin 50.0\n' $th $Bo > case.in
+      printf 'th_s %s\nBo %s\nt_tot 5.0\ndt_mp 0.05\ndt_rms 0.05\ndt_pln 0.25\ndt_bin 50.0\noutdir run_th%s_Bo%s\n' $th $Bo $th $Bo > case.in
       ./wnCH_NS case.in
     done; done

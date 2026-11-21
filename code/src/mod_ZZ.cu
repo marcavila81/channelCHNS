@@ -108,7 +108,7 @@ void wrt_ycg(float2 *ycg,float2 *bbl,float *flag,float th_s,float Bo){
    // Initialize
    FILE *ptrf;  char Nme[256]={0};
    // Write
-   sprintf(Nme,"./Results/TH_%03.2f_BO_%02.2f/ycg.txt",th_s,Bo);
+   sprintf(Nme,"%sycg.txt",OUT);
    // Open the file
    ptrf= fopen(Nme,"a");
    // Write the two values

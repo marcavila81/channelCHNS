@@ -81,12 +81,12 @@ void integrate(vfield u,float2 *ch,float Bo,float We,float th_s){
     flag[0]=0.0; flag[1]=0.0;  flag[2]=0.0;
     // Write to binary files
     if(t_bin/dt_bin>=1){t_bin=0.0;
-      sprintf(file,"./Results/TH_%03.2f_BO_%02.2f/ch_%02.2f.bin",th_s,Bo,t);
+      sprintf(file,"%sch_%02.2f.bin",OUT,t);
       wBufferBinary((float*)ch, file,sizeof(float2),NY*NX*NZ);
     }// end write to binary files
   }// end loop on time steps _ - _ - _ - _ - _ - _ - _ - _ - _ - _ - _
   // OUTRO : - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
- sprintf(file,"./Results/TH_%03.2f_BO_%02.2f/ch_%02.2f.bin",th_s,Bo,t);
+ sprintf(file,"%sch_%02.2f.bin",OUT,t);
  wBufferBinary((float*)ch, file,sizeof(float2),NY*NX*NZ);
  cudaFree(rhs.x); cudaFree(rhs.y); cudaFree(rhs.z); free(flag); 
  cudaFree(g);     cudaFree(p);     cudaFree(hp);    cudaFree(hg); 

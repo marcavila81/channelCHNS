@@ -46,9 +46,12 @@
        dt_rms  write interval, RMS profiles   } runtime inputs declared
        dt_pln  write interval, plane cuts     } extern below
        dt_bin  write interval, binary dumps   }
-   If the file cannot be opened or a key is missing, the code prints an error
-   and exits. Compile-time setup (grid, dt, Re, Cn, rho_r, ...) stays in the
-   #defines of this file.
+   Optional key:
+       outdir  output directory (default "output"); results go directly into
+               this directory, no TH/Bo subfolder
+   If the file cannot be opened or a required key is missing, the code prints
+   an error and exits. Compile-time setup (grid, dt, Re, Cn, rho_r, ...) stays
+   in the #defines of this file.
    Bo (physical) vs We (internal Weber/capillary slot), up to O(1) consts.
    Lengths are in units of the drop radius (Rad), so the characteristic
    length is Rad:
@@ -60,6 +63,7 @@
    is kept for reference only: it must NOT be computed anywhere in the code
    (it is singular for rho_r = 1). */
 extern float t_tot, dt_mp, dt_rms, dt_pln, dt_bin;  // set from input file in main
+extern char OUT[300];   // output directory (trailing slash), default "output/"
 // Ratios
 #define rho_r 1.0           // density   ratio
 #define mu_r  1.0           // viscosity ratio			     

@@ -9,6 +9,8 @@
 #include"head.h"
 #include <string.h>
 
+char OUT[300]={"output/"};   // output directory (trailing slash); see extern in head.h
+
 /* Write a commented run-info header (used for the ycg file and run_info.txt) */
 static void write_run_header(FILE *f,float th_s,float Bo,float We){
   time_t now=time(NULL); char host[64]={0}; gethostname(host,sizeof(host)-1);
@@ -44,10 +46,19 @@ int main(int argc, const char* argv[]){
    fprintf(stderr,"\n ERROR: cannot open input file '%s' -- this code requires an input file (usage: ./wnCH_NS [input_file])\n",fname);
    exit(1);
  }
- char line[256],key[64]; double val;
+ char line[256],key[64],outdir_buf[256]={"output"}; double val;
  while(fgets(line,sizeof(line),fp)){
    if(line[0]=='#' || line[0]=='\n' || line[0]=='\r') continue;
-   if(sscanf(line,"%63s %lf",key,&val)!=2){
+   if(sscanf(line,"%63s",key)!=1){
+     fprintf(stderr,"\n ERROR: malformed line in input file '%s': %s",fname,line); exit(1);
+   }
+   if(!strcmp(key,"outdir")){   // optional string key
+     if(sscanf(line,"%*63s %255s",outdir_buf)!=1){
+       fprintf(stderr,"\n ERROR: malformed outdir line in '%s': %s",fname,line); exit(1);
+     }
+     continue;
+   }
+   if(sscanf(line,"%*63s %lf",&val)!=1){
      fprintf(stderr,"\n ERROR: malformed line in input file '%s': %s",fname,line); exit(1);
    }
    if     (!strcmp(key,"th_s"))  {th_s=val;  seen[0]=1;}
@@ -108,11 +119,10 @@ int main(int argc, const char* argv[]){
  // Setters
  setFft(sizes);  setIO(y_h);   setNonlinear(y_h);  setDeriv(D_h);
  setLinear(L_h,R_h,L2_h,R2_h,FD_h); setBCon(); setCublas(y_h);
- // Create the folder where to save
- if(stat("./Results/",&st)==-1){mkdir("./Results/",0700);}
- // Create the case folder where to save
- sprintf(Nme,"./Results/TH_%03.2f_BO_%02.2f/",th_s,Bo);
- if(stat(Nme,&st)==-1){mkdir(Nme,0700);}
+ // Output directory: optional 'outdir' key from the input file (default "output")
+ snprintf(OUT,sizeof(OUT),"%s%s",outdir_buf,(outdir_buf[strlen(outdir_buf)-1]=='/')?"":"/");
+ { struct stat sto; if(stat(OUT,&sto)==-1){mkdir(OUT,0700);} }
+ snprintf(Nme,sizeof(Nme),"%s",OUT);
  // Run-info header: prepended to the ycg file, and stored as run_info.txt
  // next to the binary outputs (raw .bin files stay headerless)
  { char ycgfile[300], rif[300];
@@ -134,13 +144,13 @@ int main(int argc, const char* argv[]){
  // OUTRO ++++++++++++++++++++++++++++++++++++++++++++++++++++
  printf("\n FINISHED TH=%03.2f AND BO=%02.2f\n",th_s,Bo);
  // Last velocity field 
- sprintf(Nme,"./Results/TH_%03.2f_BO_%02.2f/ch.bin",th_s,Bo);
+ sprintf(Nme,"%sch.bin",OUT);
  wBufferBinary((float*)ch,Nme,sizeof(float2),NY*NX*NZ);
- sprintf(Nme,"./Results/TH_%03.2f_BO_%02.2f/ux.bin",th_s,Bo);
+ sprintf(Nme,"%sux.bin",OUT);
  wBufferBinary((float*)u.x,Nme,sizeof(float2),NY*NX*NZ);
- sprintf(Nme,"./Results/TH_%03.2f_BO_%02.2f/uy.bin",th_s,Bo);
+ sprintf(Nme,"%suy.bin",OUT);
  wBufferBinary((float*)u.y,Nme,sizeof(float2),NY*NX*NZ);
- sprintf(Nme,"./Results/TH_%03.2f_BO_%02.2f/uz.bin",th_s,Bo); 
+ sprintf(Nme,"%suz.bin",OUT); 
  wBufferBinary((float*)u.z,Nme,sizeof(float2),NY*NX*NZ);
  // Destroyers of the Universe
  fftDestroy(); IODestroy(); NonDestroy(); LinearDestroy();

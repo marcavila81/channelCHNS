@@ -230,7 +230,7 @@ void wrt_rms(vfield d2u,float *flag){
 void wrt_pln(float *c_pln,float *flag,float th_s,float Bo){
  // Name
  char file[512];   float t=flag[2]; 
- sprintf(file,"./Results/TH_%03.2f_BO_%02.2f/pln_%02.2f.bin",th_s,Bo,t);
+ sprintf(file,"%spln_%02.2f.bin",OUT,t);
  // Write
  wBufferBinary((float *)c_pln,file,sizeof(float),NY*NXP); return;
 }// END WRITE THE PLANE..................................................../
