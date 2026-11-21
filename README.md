@@ -19,10 +19,11 @@ Input format: one `key value` per line, `#` starts a comment. Required keys:
     th_s    # case contact angle (degrees)
     Bo      # physical Bond number of the case
     t_tot   # total simulation time
-    dt_mp   # write interval: mean profile
-    dt_rms  # write interval: RMS profiles
-    dt_pln  # write interval: plane cuts
-    dt_bin  # write interval: binary dumps
+    dt_mp   # console progress-print interval (mean-profile file output is currently disabled)
+    dt_rms  # interval for the time series: ycg.txt (center of gravity + volume)
+            #   and diag_v_int.txt (spurious-current diagnostics, capillary units)
+    dt_pln  # interval for pln_*.bin plane cuts (x-y plane through the drop center, physical space)
+    dt_bin  # interval for ch_*.bin full-field dumps (final ch/ux/uy/uz.bin are always written)
 
 If the file is missing or a required key is absent, the code prints an error
 and exits. Optional key: `outdir <dir>` sets the output directory (default

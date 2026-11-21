@@ -51,10 +51,13 @@
        th_s    case contact angle (degrees)
        Bo      physical Bond number of the case
        t_tot   total simulation time
-       dt_mp   write interval, mean profile  } output write rates,
-       dt_rms  write interval, RMS profiles   } runtime inputs declared
-       dt_pln  write interval, plane cuts     } extern below
-       dt_bin  write interval, binary dumps   }
+       dt_mp   console progress-print interval (mp file output disabled)
+       dt_rms  interval for the time series ycg.txt (cg+volume) and
+               diag_v_int.txt (spurious currents)
+       dt_pln  interval for pln_*.bin plane cuts (x-y plane at drop center)
+       dt_bin  interval for ch_*.bin full-field dumps (final ch/ux/uy/uz.bin
+               are always written)
+       (these four are runtime inputs, declared extern below)
    Optional key:
        outdir  output directory (default "output"); results go directly into
                this directory, no TH/Bo subfolder
