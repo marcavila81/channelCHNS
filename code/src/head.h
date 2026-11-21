@@ -10,6 +10,11 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+/* code version, injected by the Makefile (-DGIT_COMMIT=...) */
+#ifndef GIT_COMMIT
+#define GIT_COMMIT "unknown"
+#endif
+
 /*++++++++++++++++++++++++++++++ CONSTANTS ++++++++++++++++++++++++++++*/
 #define PI2 6.283185307179586 // two times pi
 

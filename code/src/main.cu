@@ -8,6 +8,28 @@
 -  Date   : 17/07/2024                                                    */
 #include"head.h"
 #include <string.h>
+
+/* Write a commented run-info header (used for the ycg file and run_info.txt) */
+static void write_run_header(FILE *f,float th_s,float Bo,float We){
+  time_t now=time(NULL); char host[64]={0}; gethostname(host,sizeof(host)-1);
+  fprintf(f,"# channelCHNS run info\n");
+  fprintf(f,"# date (UTC)   : %s",asctime(gmtime(&now)));
+  fprintf(f,"# host         : %s\n",host);
+  fprintf(f,"# code version : %s\n",GIT_COMMIT);
+  fprintf(f,"# grid         : NY=%d NX=%d NZ=%d (NXP=%d NZP=%d), domain LX=%g LY=%g LZ=%g\n",
+          NY,NX,NZ,NXP,NZP,(double)LX,(double)LY,(double)LZ);
+  fprintf(f,"# integrator   : dt=%g t_tot=%g d_im=%g\n",(double)dt,(double)t_tot,(double)d_im);
+  fprintf(f,"# parameters   : Cn=%g Re=%g Fr=%g rho_r=%g mu_r=%g WE_REF=%g LC=%g\n",
+          (double)Cn,(double)Re,(double)Fr,(double)rho_r,(double)mu_r,(double)WE_REF,(double)LC);
+  fprintf(f,"# case         : th_s=%g Bo=%g (physical) We=%g (Weber slot)\n",
+          (double)th_s,(double)Bo,(double)We);
+  fprintf(f,"# output rates : dt_mp=%g dt_rms=%g dt_pln=%g dt_bin=%g\n",
+          (double)dt_mp,(double)dt_rms,(double)dt_pln,(double)dt_bin);
+  fprintf(f,"# columns of the ycg file:\n");
+  fprintf(f,"#   t      : time\n");
+  fprintf(f,"#   <y>_cg : center-of-gravity height of the drop (c>=0 region)\n");
+  fprintf(f,"#   V_drop : drop volume, indicator c>=0 (code units)\n");
+}
 /*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
 int main(int argc, const char* argv[]){
  printf("\n++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
@@ -90,6 +112,14 @@ int main(int argc, const char* argv[]){
  // Create the case folder where to save
  sprintf(Nme,"./Results/TH_%03.2f_BO_%02.2f/",th_s,Bo);
  if(stat(Nme,&st)==-1){mkdir(Nme,0700);}
+ // Run-info header: prepended to the ycg file, and stored as run_info.txt
+ // next to the binary outputs (raw .bin files stay headerless)
+ { char ycgfile[300], rif[300];
+   sprintf(ycgfile,"%sycg_%03.2f_%02.2f.txt",Nme,th_s,Bo);
+   sprintf(rif,"%srun_info.txt",Nme);
+   FILE *f1=fopen(ycgfile,"w"); if(f1){write_run_header(f1,th_s,Bo,We); fclose(f1);}
+   FILE *f2=fopen(rif,"w");     if(f2){write_run_header(f2,th_s,Bo,We); fclose(f2);}
+ }
  // Initialize the velocity field and the scalar field
  initField(u);  initCh(ch,y_h,th_s); 
  // INTEGRATION+++++++++++++++++++++++++++++++++++++++++++++++
