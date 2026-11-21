@@ -119,6 +119,12 @@ int main(int argc, const char* argv[]){
    sprintf(rif,"%srun_info.txt",Nme);
    FILE *f1=fopen(ycgfile,"w"); if(f1){write_run_header(f1,th_s,Bo,We); fclose(f1);}
    FILE *f2=fopen(rif,"w");     if(f2){write_run_header(f2,th_s,Bo,We); fclose(f2);}
+   // diag_v_int.txt: one header line, then one row per output event (append in wrt_diag)
+   char dfile[300];
+   sprintf(dfile,"%sdiag_v_int.txt",Nme);
+   FILE *f3=fopen(dfile,"w");
+   if(f3){ fprintf(f3,"# t  umax  umax_cap  u_int_rms  u_int_rms_cap  Ifrac\n"); fclose(f3);}
+   setDiagDir(Nme);
  }
  // Initialize the velocity field and the scalar field
  initField(u);  initCh(ch,y_h,th_s); 

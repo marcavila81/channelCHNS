@@ -65,7 +65,10 @@ void setCublas(double *y_h){
 }//END OF SETTER AND FLUX................................................../
 
 
-// DESTROYER CUBLAS......................................................../
+// ACCESSOR FOR THE EXISTING CUBLAS HANDLE (no new handles)-----------------/
+cublasHandle_t getCublasHandle(void){ return cublasHandle; }
+
+// DESTROYER CUBLAS........................................................./
 void CublasDestroy(void){cudaFree(intdy); free(Qa_h); 
                          cublasDestroy(cublasHandle); return;
 }// END OF DESTROYER CUBLAS................................................/

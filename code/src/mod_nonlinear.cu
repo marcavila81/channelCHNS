@@ -601,6 +601,46 @@ static void wrapycg(float2 *ycg,float2 *bbl,float2 *c_p){
    wycg_k<<<grid,block>>>((float*)ycg,(float*)bbl,(float*)c_p,y);return;
 }// END WRAPPER TO COMPUTE THE POSITION OF THE CG OF THE BUBBLE............/
 
+// KERNEL FOR SPURIOUS-CURRENT DIAGNOSTICS (measurement only, no math change) /
+// Physical padded space, same grid/indexing as wycg_k:
+//   A = |u|^2,  B = (1-c^2)|u|^2,  C = (1-c^2)
+static __global__ void wdiag_k(float* A,float* B,float* C,
+		float* uxK,float* uyK,float* uzK,float* cK){
+  int k=blockIdx.x*blockDim.x+threadIdx.x;
+  int i=blockIdx.y*blockDim.y+threadIdx.y;
+  int ix=k/(2*NZP), l=k%(2*NZP), h=i*(2*NXP*NZP)+k;
+  if(l>=2*NZP || ix>=NXP || i>=NY){return;}
+  if(l>=2*NZP-2){A[h]=0.0f; B[h]=0.0f; C[h]=0.0f; return;}
+  float ux=uxK[h], uy=uyK[h], uz=uzK[h], c=cK[h];
+  float u2=ux*ux+uy*uy+uz*uz;
+  float w=1.0f-c*c;
+  A[h]=u2; B[h]=w*u2; C[h]=w; return;
+}
+// Wrapper: launch kernel + cublas reductions on the EXISTING handle, then
+// hand the reduced values to mod_io (wrt_diag owns only the file write)
+static void wrapdiag(float* A,float* B,float* C,vfield u_p,float2* c_p){
+  dim3 grid,block; block.x=block_size;
+  grid.x=(2*NXP*NZP+block.x-1)/block.x; grid.y=NY;
+  wdiag_k<<<grid,block>>>(A,B,C,(float*)u_p.x,(float*)u_p.y,(float*)u_p.z,(float*)c_p);
+  cublasHandle_t h=getCublasHandle();
+  int N=NY*NXP*2*NZP, imax=0; float amax=0.0f, I1=0.0f, I0=0.0f;
+  cublasCheck(cublasIsamax(h,N,A,1,&imax),"Isamax");
+  CHECK_CUDART(cudaMemcpy(&amax,A+(imax-1),sizeof(float),cudaMemcpyDeviceToHost));
+  if(!(amax>=0.0f) || isnan(amax)){
+    fprintf(stderr,"\n ERROR: diag umax invalid (max |u|^2 entry = %g) -- aborting\n",(double)amax);
+    exit(1);
+  }
+  float umax=sqrtf(amax);
+  cublasCheck(cublasSasum(h,N,B,1,&I1),"SasumB");
+  cublasCheck(cublasSasum(h,N,C,1,&I0),"SasumC");
+  if(!(I0>0.0f) || isnan(I0)){
+    fprintf(stderr,"\n ERROR: diag I0 invalid (%g) -- aborting\n",(double)I0);
+    exit(1);
+  }
+  setDiagVals(umax,sqrtf(I1/I0),I0);
+  return;
+}
+
 // WRAPPER TO COPY FROM THE WHOLE 3D FIELD TO THE PLANE VECTOR............./
 static void wrappln(float *c_pln,float2 *c_p){
    // Dimensions
@@ -708,7 +748,12 @@ void init_nonlinear(vfield du,float2 *rhc,float2 *rux,vfield u,float2 *c,
  // OUTPUTS·····························································
  // 30.Output to the mean profile file (io_mp.txt) if flag[0]>0  
  if(flag[2]>0.0){wrappln(c_pln,c_p); wrt_pln(c_pln,flag,th_s,Bo);}
- if(flag[1]>0.0){wrapycg(d2u_p.x,d2u_p.y,c_p); wrt_ycg(d2u_p.x,d2u_p.y,flag,th_s,Bo);}
+ if(flag[1]>0.0){wrapycg(d2u_p.x,d2u_p.y,c_p); wrt_ycg(d2u_p.x,d2u_p.y,flag,th_s,Bo);
+   // spurious-current diagnostics (measurement only): reuse the d2u_p pads
+   // as scratch A,B,C (free after wrt_ycg); u_p and c_p are physical here
+   wrapdiag((float*)d2u_p.x,(float*)d2u_p.y,(float*)d2u_p.z,u_p,c_p);
+   wrt_diag(flag,We);
+ }
  //if(flag[0]>0.0){
   // 30.1 Call kernel to write to io_mpr.txt file
   // wrt_mp(ux,flag);  

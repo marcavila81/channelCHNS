@@ -119,6 +119,8 @@ void init_cfd(double *y_h,double *LH_1,double *RH_1,double *DC1,
 
 // CUBLAS 
 void setCublas(double *y_h);
+void cublasCheck(cublasStatus_t error,const char* function);
+cublasHandle_t getCublasHandle(void);
 void CublasDestroy(void);
 void adj_flux(float2 *rhx);
 
@@ -166,6 +168,9 @@ void initField(vfield u);
 void wrt_mp(float2 *ux,float *flag);
 void wrt_rms(vfield d2u,float *flag);
 void wrt_pln(float *c_pln,float *flag,float th_s,float Bo);
+void wrt_diag(float *flag,float We);          // spurious-current diagnostics (file write only)
+void setDiagDir(const char* nme);             // case results folder, set once from main
+void setDiagVals(float umax,float urms,float I0); // reduced values for the next wrt_diag row
 
 // INTEGRATE
 void integrate(vfield u,float2 *ch,float Bo,float We,float th_s);
