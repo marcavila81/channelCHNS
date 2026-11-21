@@ -4,3 +4,13 @@
 *.ptx
 *.cubin
 *.fatbin
+
+# run outputs
+output/
+output_*/
+Results/
+case.in
+run*.log
+code/wnCH_NS
+code/src/*.o
+code/VERSION

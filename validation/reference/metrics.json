@@ -1,0 +1,15 @@
+{
+  "case": "case1_static_cap_th50_Bo0",
+  "t_end": 0.2,
+  "metrics": {
+    "contact_angle_circle_fit_deg": 50.145201277215726,
+    "circle_L2_over_hmax": 0.0009792838906959448,
+    "umax_cap": 0.0259064734,
+    "u_int_rms_cap": 0.0031482568,
+    "Ifrac_abs_max": 0.010763290000000092,
+    "Ifrac_abs_drift_settled": 0.010763290000000092,
+    "volume_rel_drift_abs": 0.0031393855741161697,
+    "cg_abs_drift": 7.928000000045898e-06
+  },
+  "oracle_pass": true
+}

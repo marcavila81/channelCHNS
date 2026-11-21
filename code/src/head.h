@@ -20,9 +20,16 @@
 
 /*++++++++++++++++++++++++ SIMULATION PARAMETERS ++++++++++++++++++++++*/
 // Grid points and modes
+// overridable from the Makefile via -D (e.g. sanity runs: make FLAGS="-DNY=65 ...")
+#ifndef NY
 #define NY   257            // Wall-normal direction no. points
+#endif
+#ifndef NX
 #define NX   256            // 2*m_x streamwise modes (must be even!)
-#define NZ   129            // m_z+1 spanwise   modes (must be odd! ) 
+#endif
+#ifndef NZ
+#define NZ   129            // m_z+1 spanwise   modes (must be odd! )
+#endif
 // Length of the domain
 #define LX   (5.0)         // Length in x direction (in initial radius)
 #define LY   (5.0)         // Length in y direction (in initial radius)
@@ -32,7 +39,9 @@
 #define A_P  0.0            // magnitude of the streamwise perturbation
 #define eps  0.0            // magnitude of the random perturbation
 /*++++++++++++++++++++++++++++ FLOW PARAMETERS ++++++++++++++++++++++++*/
+#ifndef Cn
 #define Cn   0.025           // Cahn number
+#endif
 #define Re   50.0            // Reynolds number
 #define Fr   1.0             // Froude number
 #define WE_REF 1.0           // reference Weber number (capillary slot 1/(Cn*We)) used if rho_r==1
@@ -84,7 +93,9 @@ extern char OUT[300];   // output directory (trailing slash), default "output/"
 /*++++++++++++++++++++++++ INTEGRATOR PARAMETERS ++++++++++++++++++++++*/
 #define d_im  1.0           // implicit parameter
 // Time-Step size
+#ifndef dt
 #define dt    0.00005        // time step size (constant)
+#endif
 // t_tot (total simulation time) is a RUNTIME input from the input file
 // Points after aliasing
 #define NXP (3*NX/2)        // Total physical streamwise points

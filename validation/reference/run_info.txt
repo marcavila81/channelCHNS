@@ -1,0 +1,13 @@
+# channelCHNS run info
+# date (UTC)   : Sat Nov 21 16:28:42 2026
+# host         : zarm-b200.exc.uni-bremen.de
+# code version : a39c2d7
+# grid         : NY=257 NX=256 NZ=129 (NXP=384 NZP=193), domain LX=5 LY=5 LZ=5
+# integrator   : dt=5e-05 t_tot=0.2002 d_im=1
+# parameters   : Cn=0.025 Re=50 Fr=1 rho_r=1 mu_r=1 WE_REF=1 Rad=1
+# case         : th_s=50 Bo=0 (physical) We=1 (Weber slot)
+# output rates : dt_mp=0.05 dt_rms=0.005 dt_pln=0.05 dt_bin=50
+# columns of the ycg file:
+#   t      : time
+#   <y>_cg : center-of-gravity height of the drop (c>=0 region)
+#   V_drop : drop volume, indicator c>=0 (code units)

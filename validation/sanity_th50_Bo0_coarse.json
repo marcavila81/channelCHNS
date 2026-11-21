@@ -1,0 +1,36 @@
+{
+  "name": "sanity_th50_Bo0_coarse",
+  "description": "Fast smoke test for solver tweaks: coarse grid, larger Cn, larger dt, short run (target: seconds on one GPU). Build with the given flags: make -C ../code FLAGS='-DNY=65 -DNX=64 -DNZ=33 -DCn=0.05 -Ddt=1e-4'. Oracle is loose: it must catch breakage/NaN/regressions, not measure accuracy.",
+  "binary": "../code/wnCH_NS",
+  "build_flags": "-DNY=65 -DNX=64 -DNZ=33 -DCn=0.05 -Ddt=1e-4",
+  "runtime_input": {
+    "th_s": 50.0,
+    "Bo": 0.0,
+    "t_tot": 0.02,
+    "dt_mp": 0.01,
+    "dt_rms": 0.005,
+    "dt_pln": 0.01,
+    "dt_bin": 50.0,
+    "outdir": "output_sanity"
+  },
+  "compile_time": {
+    "rho_r": 1.0, "mu_r": 1.0, "Cn": 0.05, "Re": 50.0, "Fr": 1.0,
+    "dt": 1e-4, "d_im": 1.0, "WE_REF": 1.0, "Rad": 1.0,
+    "grid": {"NY": 65, "NX": 64, "NZ": 33},
+    "domain": {"LX": 5.0, "LY": 5.0, "LZ": 5.0}
+  },
+  "oracle": {
+    "contact_angle_circle_fit_deg": {"expected": 50.0, "abs_tol": 3.0},
+    "circle_L2_over_hmax": {"max": 1.0e-2},
+    "umax_cap": {"max": 0.2},
+    "u_int_rms_cap": {"max": 0.05},
+    "Ifrac_abs_max": {"max": 5.0e-2},
+    "volume_rel_drift_abs": {"max": 5.0e-2},
+    "cg_abs_drift": {"max": 1.0e-2}
+  },
+  "hard_checks": {
+    "exit_code": 0,
+    "files": ["run_info.txt", "ycg.txt", "diag_v_int.txt", "ch.bin", "ux.bin", "uy.bin", "uz.bin"],
+    "all_finite": true
+  }
+}
