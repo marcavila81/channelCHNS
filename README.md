@@ -9,7 +9,7 @@ Build with `make` in `code/` (requires CUDA: nvcc, cufft, cublas, curand, cuspar
 
 The code requires an input file at run time (no built-in defaults):
 
-    ./wnCH_NS [input_file]        # default input file: ./input.txt
+    ./wnCH_NS [input_file]        # default input file: ./case.in
 
 Input format: one `key value` per line, `#` starts a comment. Required keys:
 
@@ -30,6 +30,6 @@ via the `#define`s in `code/src/head.h` and needs a recompile. Case parameters
 and output rates come from the input file, so sweeps are done externally, e.g.:
 
     for th in 20 40; do for Bo in 0.5 1.0; do
-      printf 'th_s %s\nBo %s\nt_tot 5.0\ndt_mp 0.05\ndt_rms 0.05\ndt_pln 0.25\ndt_bin 50.0\n' $th $Bo > input.txt
-      ./wnCH_NS input.txt
+      printf 'th_s %s\nBo %s\nt_tot 5.0\ndt_mp 0.05\ndt_rms 0.05\ndt_pln 0.25\ndt_bin 50.0\n' $th $Bo > case.in
+      ./wnCH_NS case.in
     done; done

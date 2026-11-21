@@ -33,7 +33,7 @@
 #define WE_REF 1.0           // reference Weber number (capillary slot 1/(Cn*We)) used if rho_r==1
 #define LC   (LY/2.0)       // characteristic length for the Bond number (half channel height)
 /* CASE INPUTS ARE READ AT RUNTIME from an input file (mandatory, no defaults):
-   usage: ./wnCH_NS [input_file]      (default input file: ./input.txt)
+   usage: ./wnCH_NS [input_file]      (default input file: ./case.in)
    Format: one 'key value' per line, '#' starts a comment. Required keys:
        th_s    case contact angle (degrees)
        Bo      physical Bond number of the case

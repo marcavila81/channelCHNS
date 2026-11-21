@@ -14,7 +14,7 @@ int main(int argc, const char* argv[]){
  printf("\n++++++++++++++  Welcome to nsWallChan in CUDA  +++++++++++++++");
  printf("\n++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
  // CASE INPUTS FROM FILE (mandatory, no defaults): ./wnCH_NS [input_file]
- const char *fname = (argc>1) ? argv[1] : "input.txt";
+ const char *fname = (argc>1) ? argv[1] : "case.in";
  float th_s=0.0, Bo=0.0, v_ttot=0.0, v_mp=0.0, v_rms=0.0, v_pln=0.0, v_bin=0.0;
  int seen[7]={0,0,0,0,0,0,0};
  FILE *fp=fopen(fname,"r");
