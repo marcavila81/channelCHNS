@@ -82,10 +82,21 @@ int main(int argc, const char* argv[]){
    printf("\n NOTE: matched densities (rho_r = 1): no buoyancy, setting Bo = 0\n");
    Bo=0.0;
  }
- // Internal Weber number (capillary slot); lengths in units of the drop
- // radius Rad:  Bo = (rho_r-1)*Rad^2*We/Fr^2
+ // Internal Weber number (capillary slot). Convention (matches the kernels
+ // and FLOW3D6, Roccon/Soligo/Soldati CPC 313 (2025) 109640): the bubble
+ // is the c=+1 phase and the continuous (heavier, more viscous) liquid is
+ // the scale reference, so rho_r = rho_bubble/rho_liquid <= 1, mu_r <= 1,
+ // and Delta rho = (1-rho_r). Hence Bo = (1-rho_r)*Rad^2*We/Fr^2.
  float We = (rho_r==1.0) ? float(WE_REF)
-              : Bo*float(Fr)*float(Fr)/(float(rho_r-1.0)*float(Rad)*float(Rad));
+              : Bo*float(Fr)*float(Fr)/(float(1.0-rho_r)*float(Rad)*float(Rad));
+ // Guard: We must be positive. Under the rho_r<=1 convention this is
+ // automatic for any Bo>0; We<0 would mean negative surface tension.
+ if(We < 0.0f){
+   fprintf(stderr,"\n ERROR: We=%g < 0 from Bo=%g, rho_r=%g: check the rho_r<=1 "
+           "convention (bubble at c=+1, liquid reference) and the sign of Bo in '%s'\n",
+           (double)We,(double)Bo,(double)rho_r,fname);
+   exit(1);
+ }
  printf("\n Case: th_s=%03.2f  Bo=%02.2f (physical)  We=%.6f (Weber slot)\n",th_s,Bo,We);
  printf(" Run: t_tot=%f  dt_mp=%f dt_rms=%f dt_pln=%f dt_bin=%f\n",t_tot,dt_mp,dt_rms,dt_pln,dt_bin);
  // Startup assertion: all case values must be valid (finite, positive intervals)
@@ -94,6 +105,13 @@ int main(int argc, const char* argv[]){
    fprintf(stderr,"\n ERROR: invalid case values from '%s': th_s=%f Bo=%f We=%f t_tot=%f dt_mp=%f dt_rms=%f dt_pln=%f dt_bin=%f\n",
            fname,(double)th_s,(double)Bo,(double)We,(double)t_tot,(double)dt_mp,(double)dt_rms,(double)dt_pln,(double)dt_bin);
    exit(1);
+ }
+ // Convention warning (non-fatal): the equations are rescaled for
+ // rho_r <= 1, mu_r <= 1 (continuous liquid = reference phase)
+ if(rho_r > 1.0 || mu_r > 1.0){
+   fprintf(stderr,"\n WARNING: rho_r=%g, mu_r=%g: ratios > 1 are outside the "
+           "rescaling of the equations and stability is not guaranteed "
+           "(per the authors; see FLOW3D6 for handling)\n",(double)rho_r,(double)mu_r);
  }
  // SET DEVICE AND START CLOCK
  int dev=3;  clock_t begin = clock(); struct stat st = {0};

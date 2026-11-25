@@ -67,7 +67,9 @@
    Bo (physical) vs We (internal Weber/capillary slot), up to O(1) consts.
    Lengths are in units of the drop radius (Rad), so the characteristic
    length is Rad:
-       Bo = (rho_r-1)*Rad^2*We/Fr^2   =>   We = Bo*Fr^2/((rho_r-1)*Rad^2)
+       Bo = (1-rho_r)*Rad^2*We/Fr^2  =>  We = Bo*Fr^2/((1-rho_r)*Rad^2)
+   Convention: bubble = c=+1 phase, continuous liquid = reference (density 1,
+   base viscosity), so rho_r = rho_bubble/rho_liquid <= 1 and mu_r <= 1.
    If rho_r == 1 (matched densities) there is no buoyancy: Bo is forced to 0
    at runtime (with a printf) and We = WE_REF. Output file names keep BO but
    print the physical Bo. The old Fritz-based critical estimate
