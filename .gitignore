@@ -14,3 +14,6 @@ run*.log
 code/wnCH_NS
 code/src/*.o
 code/VERSION
+
+# local-only connection details, NEVER commit
+AGENTS.local.md
