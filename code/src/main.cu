@@ -115,9 +115,17 @@ int main(int argc, const char* argv[]){
  }
  // SET DEVICE AND START CLOCK
 #ifndef DEV
-#define DEV 3            // CUDA device ordinal, overridable: -DDEV=0
+#define DEV -1           // -1 = auto: pick the device with the most free memory
 #endif
  int dev=DEV;  clock_t begin = clock(); struct stat st = {0};
+ if(dev<0){
+   int ndev=0; CHECK_CUDART(cudaGetDeviceCount(&ndev));
+   size_t best=0; dev=0;
+   for(int d=0;d<ndev;d++){
+     size_t fre=0,tot=0; cudaMemGetInfo(&fre,&tot);
+     if(fre>best){best=fre; dev=d;}
+   }
+ }
  printf("\nSetting device %d\n",dev); CHECK_CUDART(cudaSetDevice(dev));
  // INITIALIZATION +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  size_p sizes; sizes.Ny=NY; sizes.Nz=NZ; sizes.Nx=NX; char Nme[255]={0}; 
