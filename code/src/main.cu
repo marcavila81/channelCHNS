@@ -114,7 +114,10 @@ int main(int argc, const char* argv[]){
            "(per the authors; see FLOW3D6 for handling)\n",(double)rho_r,(double)mu_r);
  }
  // SET DEVICE AND START CLOCK
- int dev=3;  clock_t begin = clock(); struct stat st = {0};
+#ifndef DEV
+#define DEV 3            // CUDA device ordinal, overridable: -DDEV=0
+#endif
+ int dev=DEV;  clock_t begin = clock(); struct stat st = {0};
  printf("\nSetting device %d\n",dev); CHECK_CUDART(cudaSetDevice(dev));
  // INITIALIZATION +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  size_p sizes; sizes.Ny=NY; sizes.Nz=NZ; sizes.Nx=NX; char Nme[255]={0}; 
