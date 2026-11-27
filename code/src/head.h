@@ -35,14 +35,18 @@
 #define LY   (5.0)         // Length in y direction (in initial radius)
 #define LZ   (5.0)         // Length in z direction (in initial radius)
 // Initial conditions
+#ifndef Rad
 #define Rad  1.0            // radius of the drop w.r.t. half height
+#endif
 #define A_P  0.0            // magnitude of the streamwise perturbation
 #define eps  0.0            // magnitude of the random perturbation
 /*++++++++++++++++++++++++++++ FLOW PARAMETERS ++++++++++++++++++++++++*/
 #ifndef Cn
 #define Cn   0.025           // Cahn number
 #endif
+#ifndef Re
 #define Re   50.0            // Reynolds number
+#endif
 #define Fr   1.0             // Froude number
 #define WE_REF 1.0           // reference Weber number (capillary slot 1/(Cn*We)) used if rho_r==1
 /* CASE INPUTS ARE READ AT RUNTIME from an input file (mandatory, no defaults):
@@ -79,8 +83,12 @@
 extern float t_tot, dt_mp, dt_rms, dt_pln, dt_bin;  // set from input file in main
 extern char OUT[300];   // output directory (trailing slash), default "output/"
 // Ratios
+#ifndef rho_r
 #define rho_r 1.0           // density   ratio
+#endif
+#ifndef mu_r
 #define mu_r  1.0           // viscosity ratio			     
+#endif
 
 /*++++++++++++++++++++++++++++ GRID PARAMETERS ++++++++++++++++++++++++*/
 #define p_y  0.0            // p_y==1-> uniform grid, p_y=0->Chebyshev

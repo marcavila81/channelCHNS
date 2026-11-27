@@ -104,7 +104,10 @@ void wrt_ycg(float2 *ycg,float2 *bbl,float *flag,float th_s,float Bo){
    cublasCheck(cublasSasum(cublasHandle,NY*NXP*2*NZP,(float*)ycg,1,&S_ycg),"Tr");
    cublasCheck(cublasSasum(cublasHandle,NY*NXP*2*NZP,(float*)bbl,1,&S_Vl),"Tr");
    // Normalize the two values
-   S_ycg=S_ycg/S_Vl;   S_Vl=float(LX*LY*LZ)*S_Vl/float(NY*NXP*(2*NZP-2)); 
+   // wycg_k now accumulates dy-weighted sums: S_Vl = sum(bbl*dy_i),
+   // S_ycg = sum(y*bbl*dy_i). Volume = S_Vl * dx*dz with dx=LX/NXP,
+   // dz=LZ/(2*NZP-2) (uniform Fourier directions); centroid = S_ycg/S_Vl.
+   S_ycg=S_ycg/S_Vl;   S_Vl=float(LX)*float(LZ)*S_Vl/float(NXP*(2*NZP-2));
    // Initialize
    FILE *ptrf;  char Nme[256]={0};
    // Write

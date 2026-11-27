@@ -280,8 +280,12 @@ static __global__ void wycg_k(float* ycg,float* Vl,float *cK,double *yK){
   float y=float(yK[i]); float c=cK[h]; float bbl=0.0;
   // Bubble?
   if(c>=0.0){bbl=1.0;}
-  // CG and bubble
-  Vl[h]=bbl;    ycg[h]=y*bbl; 
+  // Chebyshev cell width (trapezoidal weights on the wall-normal grid):
+  // real volumes/centroids must weight each cell by its own dy, not LY/NY
+  int im = i>0 ? i-1 : 0, ip = i<NY-1 ? i+1 : NY-1;
+  float dy = 0.5f*float(yK[ip]-yK[im]);
+  // CG and bubble (dy-weighted)
+  Vl[h]=bbl*dy;    ycg[h]=y*bbl*dy;
 }// END KERNEL TO COMPUTE THE CG OF THE BUBBLE............................/
 
 

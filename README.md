@@ -47,6 +47,29 @@ the source, e.g. a cheap coarse run:
 
     make -C code FLAGS="-DNY=65 -DNX=64 -DNZ=33 -DCn=0.05 -Ddt=1e-4"
 
+## Initial condition (drop setup)
+Unless `restart 1` is set, `initCh` (`code/src/mod_nonlinear.cu`, kernel
+`add_drop_k`) starts from `c = -1` everywhere plus a spherical cap sitting on
+the bottom wall (`y = 0`), centered at `(x, y, z) = (0, hg, 0)`:
+
+    an  = (th_s - 90) in radians      # th_s = contact angle from case.in
+    fc  = 1 + cos(th_s)               # = 1 - sin(an)
+    Rd  = Rad * (2 / (fc^2 * (3 - fc)))^(1/3)
+    hg  = -Rd * sin(an)               # = Rd * cos(th_s)
+    c   = tanh((Rd - r) / (sqrt(2) * Cn)),   r = sqrt(x^2 + (y-hg)^2 + z^2)
+
+`Rd` is rescaled with `th_s` so that the *geometric* cap volume is a constant
+`(2*pi/3) * Rad^3`, independent of the contact angle (verified numerically:
+2.0944-2.0950 for th_s = 50/54/90 deg at Rad = 1). Lengths are in code units
+in which the drop radius is `Rad` (domain `LX x LY x LZ = 5^3`), so the
+capillary length in code units is `lambda = Rad / sqrt(Bo)` (from
+`Bo = (1-rho_r) Rad^2 We / Fr^2`, `Fr = 1`); at `Bo = 1` this reduces to
+`lambda = Rad`. The `V_drop` and `y_cg` columns of `ycg.txt` are computed with
+proper Chebyshev cell weights (`dy_i = (y_{i+1}-y_{i-1})/2` in `wycg_k`), so
+`V_drop` is the true geometric `c >= 0` volume in code units and `y_cg` the
+true volume centroid; the initial `V_drop` is therefore the constant
+`(2*pi/3) Rad^3` up to the diffuse-interface mask.
+
 ## Restarting
 The final fields `ch.bin ux.bin uy.bin uz.bin` in the output directory are the
 restart state (spectral representation). To restart, copy them into the run
