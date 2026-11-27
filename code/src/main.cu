@@ -122,7 +122,7 @@ int main(int argc, const char* argv[]){
    int ndev=0; CHECK_CUDART(cudaGetDeviceCount(&ndev));
    size_t best=0; dev=0;
    for(int d=0;d<ndev;d++){
-     size_t fre=0,tot=0; cudaMemGetInfo(&fre,&tot);
+     size_t fre=0,tot=0; cudaSetDevice(d); cudaMemGetInfo(&fre,&tot);
      if(fre>best){best=fre; dev=d;}
    }
  }
