@@ -18,6 +18,8 @@ static void write_run_header(FILE *f,float th_s,float Bo,float We){
   fprintf(f,"# date (UTC)   : %s",asctime(gmtime(&now)));
   fprintf(f,"# host         : %s\n",host);
   fprintf(f,"# code version : %s\n",GIT_COMMIT);
+  fprintf(f,"# Nphys        : %lld (NY*NXP*(2*NZP-2) physical cells in the diag reductions)\n",
+          (long long)((double)NY*(double)NXP*(double)(2*NZP-2)));
   fprintf(f,"# grid         : NY=%d NX=%d NZ=%d (NXP=%d NZP=%d), domain LX=%g LY=%g LZ=%g\n",
           NY,NX,NZ,NXP,NZP,(double)LX,(double)LY,(double)LZ);
   fprintf(f,"# integrator   : dt=%g t_tot=%g d_im=%g\n",(double)dt,(double)t_tot,(double)d_im);
@@ -163,7 +165,7 @@ int main(int argc, const char* argv[]){
    char dfile[300];
    sprintf(dfile,"%sdiag_v_int.txt",Nme);
    FILE *f3=fopen(dfile,"w");
-   if(f3){ fprintf(f3,"# t  umax  u_int_rms  Ifrac   (code units)\n"); fclose(f3);}
+   if(f3){ fprintf(f3,"# t  umax  u_int_rms  Ifrac  M_int  M_c   (code units; M_* raw flat cell sums)\n"); fclose(f3);}
    setDiagDir(Nme);
  }
  // Initialize the velocity field and the scalar field

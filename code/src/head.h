@@ -201,7 +201,7 @@ void wrt_rms(vfield d2u,float *flag);
 void wrt_pln(float *c_pln,float *flag,float th_s,float Bo);
 void wrt_diag(float *flag,float We);          // spurious-current diagnostics (file write only)
 void setDiagDir(const char* nme);             // case results folder, set once from main
-void setDiagVals(float umax,float urms,float I0); // reduced values for the next wrt_diag row
+void setDiagVals(float umax,float urms,float I0,float Mplus); // reduced values for the next wrt_diag row
 
 // INTEGRATE
 void integrate(vfield u,float2 *ch,float Bo,float We,float th_s);

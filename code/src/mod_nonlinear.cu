@@ -433,6 +433,7 @@ static __global__ void padBackward_BC_k(float2 *u,float2 *pad){
 static vfield u_p, d1u_p, d2u_p, d3u_p, dc_p;
 static float2 *aux1, *aux2, *aux3, *auxBC;
 static float2 *c_p, *BC_p;
+static float *wint;   // dedicated scratch for the M_int mass diagnostic (c+1)
 static float *c_pln;
 static double *y;
 static void calcNonlinear(vfield u,vfield d1u,vfield d2u,vfield d3u,float2 *cK,vfield dc);
@@ -608,26 +609,26 @@ static void wrapycg(float2 *ycg,float2 *bbl,float2 *c_p){
 // KERNEL FOR SPURIOUS-CURRENT DIAGNOSTICS (measurement only, no math change) /
 // Physical padded space, same grid/indexing as wycg_k:
 //   A = |u|^2,  B = (1-c^2)|u|^2,  C = (1-c^2)
-static __global__ void wdiag_k(float* A,float* B,float* C,
+static __global__ void wdiag_k(float* A,float* B,float* C,float* D,
 		float* uxK,float* uyK,float* uzK,float* cK){
   int k=blockIdx.x*blockDim.x+threadIdx.x;
   int i=blockIdx.y*blockDim.y+threadIdx.y;
   int ix=k/(2*NZP), l=k%(2*NZP), h=i*(2*NXP*NZP)+k;
   if(l>=2*NZP || ix>=NXP || i>=NY){return;}
-  if(l>=2*NZP-2){A[h]=0.0f; B[h]=0.0f; C[h]=0.0f; return;}
+  if(l>=2*NZP-2){A[h]=0.0f; B[h]=0.0f; C[h]=0.0f; D[h]=0.0f; return;}
   float ux=uxK[h], uy=uyK[h], uz=uzK[h], c=cK[h];
   float u2=ux*ux+uy*uy+uz*uz;
   float w=1.0f-c*c;
-  A[h]=u2; B[h]=w*u2; C[h]=w; return;
+  A[h]=u2; B[h]=w*u2; C[h]=w; D[h]=c+1.0f; return;
 }
 // Wrapper: launch kernel + cublas reductions on the EXISTING handle, then
 // hand the reduced values to mod_io (wrt_diag owns only the file write)
-static void wrapdiag(float* A,float* B,float* C,vfield u_p,float2* c_p){
+static void wrapdiag(float* A,float* B,float* C,float* D,vfield u_p,float2* c_p){
   dim3 grid,block; block.x=block_size;
   grid.x=(2*NXP*NZP+block.x-1)/block.x; grid.y=NY;
-  wdiag_k<<<grid,block>>>(A,B,C,(float*)u_p.x,(float*)u_p.y,(float*)u_p.z,(float*)c_p);
+  wdiag_k<<<grid,block>>>(A,B,C,D,(float*)u_p.x,(float*)u_p.y,(float*)u_p.z,(float*)c_p);
   cublasHandle_t h=getCublasHandle();
-  int N=NY*NXP*2*NZP, imax=0; float amax=0.0f, I1=0.0f, I0=0.0f;
+  int N=NY*NXP*2*NZP, imax=0; float amax=0.0f, I1=0.0f, I0=0.0f, Mplus=0.0f;
   cublasCheck(cublasIsamax(h,N,A,1,&imax),"Isamax");
   CHECK_CUDART(cudaMemcpy(&amax,A+(imax-1),sizeof(float),cudaMemcpyDeviceToHost));
   if(!(amax>=0.0f) || isnan(amax)){
@@ -637,11 +638,12 @@ static void wrapdiag(float* A,float* B,float* C,vfield u_p,float2* c_p){
   float umax=sqrtf(amax);
   cublasCheck(cublasSasum(h,N,B,1,&I1),"SasumB");
   cublasCheck(cublasSasum(h,N,C,1,&I0),"SasumC");
+  cublasCheck(cublasSasum(h,N,D,1,&Mplus),"SasumD");
   if(!(I0>0.0f) || isnan(I0)){
     fprintf(stderr,"\n ERROR: diag I0 invalid (%g) -- aborting\n",(double)I0);
     exit(1);
   }
-  setDiagVals(umax,sqrtf(I1/I0),I0);
+  setDiagVals(umax,sqrtf(I1/I0),I0,Mplus);
   return;
 }
 
@@ -755,7 +757,7 @@ void init_nonlinear(vfield du,float2 *rhc,float2 *rux,vfield u,float2 *c,
  if(flag[1]>0.0){wrapycg(d2u_p.x,d2u_p.y,c_p); wrt_ycg(d2u_p.x,d2u_p.y,flag,th_s,Bo);
    // spurious-current diagnostics (measurement only): reuse the d2u_p pads
    // as scratch A,B,C (free after wrt_ycg); u_p and c_p are physical here
-   wrapdiag((float*)d2u_p.x,(float*)d2u_p.y,(float*)d2u_p.z,u_p,c_p);
+   wrapdiag((float*)d2u_p.x,(float*)d2u_p.y,(float*)d2u_p.z,wint,u_p,c_p);
    wrt_diag(flag,We);
  }
  //if(flag[0]>0.0){
@@ -858,7 +860,10 @@ void setNonlinear(double *y_h){
   size_pad=4*NXP*NZP*sizeof(float2);
   CHECK_CUDART(cudaMalloc(&BC_p,size_pad));
   size_pad=4*NX*NZ*sizeof(float2);
-  CHECK_CUDART(cudaMalloc(&auxBC,size_pad));  return; 
+  CHECK_CUDART(cudaMalloc(&auxBC,size_pad));
+  // Dedicated scratch for the M_int mass diagnostic: (c+1) per physical cell
+  size_pad=NY*NXP*2*NZP*sizeof(float);
+  CHECK_CUDART(cudaMalloc(&wint,size_pad));  return;
 }// END SETTER.........................................................../
 
 
@@ -877,7 +882,8 @@ void NonDestroy(void){   cudaFree(aux1);      cudaFree(aux2);
     cudaFree(d3u_p.x);   cudaFree(d3u_p.y);   cudaFree(d3u_p.z);
     cudaFree(dc_p.x);    cudaFree(dc_p.y);    cudaFree(dc_p.z);
     cudaFree(c_p);       cudaFree(aux3);      cudaFree(y);
-    cudaFree(BC_p);      cudaFree(auxBC);     cudaFree(c_pln); return;
+    cudaFree(BC_p);      cudaFree(auxBC);     cudaFree(c_pln);
+    cudaFree(wint); return;
 }// END NONLINEAR DESTROYER............................................../
 
 

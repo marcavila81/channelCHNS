@@ -238,20 +238,27 @@ void wrt_pln(float *c_pln,float *flag,float th_s,float Bo){
 /*++++++++++++++++++ SPURIOUS-CURRENT DIAGNOSTICS (diag_v_int.txt) ++++++++++*/
 // State for wrt_diag: case folder (set once from main) + last reduced values
 static char   diag_dir[300]={"\0"};
-static float  diag_umax=0.0f, diag_urms=0.0f, diag_I0=0.0f, diag_I0_ref=0.0f;
+static float  diag_umax=0.0f, diag_urms=0.0f, diag_I0=0.0f, diag_I0_ref=0.0f, diag_Mplus=0.0f;
 void setDiagDir(const char* nme){ snprintf(diag_dir,sizeof(diag_dir),"%s",nme); }
-void setDiagVals(float umax,float urms,float I0){ diag_umax=umax; diag_urms=urms; diag_I0=I0; }
+void setDiagVals(float umax,float urms,float I0,float Mplus){ diag_umax=umax; diag_urms=urms; diag_I0=I0; diag_Mplus=Mplus; }
 // wrt_diag owns ONLY the file write of diag_v_int.txt (append mode, like wrt_ycg).
-// Columns (code units): t  umax  u_int_rms  Ifrac
+// Columns (code units): t  umax  u_int_rms  Ifrac  M_int  M_c
 // Raw code-unit velocities, no rescaling. We = rho_ref U^2 R/sigma with
 // rho_ref = liquid = 1 (carrier-reference convention).
+// M_int = 0.5*sum(c+1), M_c = sum(c) over the Nphys = NY*NXP*(2*NZP-2)
+// physical cells (zero-padded entries contribute 0). M values are raw flat
+// sums over cells (no y-quadrature weights); their time trend is the mass
+// conservation certificate. Sasum over (c+1) is exact while c >= -1.
 void wrt_diag(float *flag,float We){
  char file[512];   float t=flag[1];
  sprintf(file,"%sdiag_v_int.txt",diag_dir);
  if(diag_I0_ref==0.0f && diag_I0>0.0f) diag_I0_ref=diag_I0;   // I0 at first event
  float Ifrac=(diag_I0_ref>0.0f)? diag_I0/diag_I0_ref : 1.0f;
+ double Nphys=(double)NY*(double)NXP*(double)(2*NZP-2);
+ double M_int=0.5*(double)diag_Mplus;
+ double M_c=(double)diag_Mplus-Nphys;
  FILE *ptr=fopen(file,"a");
- fprintf(ptr,"%.8e  %.8e  %.8e  %.8e\n",
-         t,diag_umax,diag_urms,Ifrac);
+ fprintf(ptr,"%.8e  %.8e  %.8e  %.8e  %.8e  %.8e\n",
+         t,diag_umax,diag_urms,Ifrac,M_int,M_c);
  fclose(ptr); return;
 }// END WRITE DIAG......................................................../
