@@ -14,33 +14,74 @@
     "outdir": "output"
   },
   "compile_time": {
-    "rho_r": 1.0, "mu_r": 1.0, "Cn": 0.025, "Re": 50.0, "Fr": 1.0,
-    "dt": 5e-05, "d_im": 1.0, "WE_REF": 1.0, "Rad": 1.0,
-    "grid": {"NY": 257, "NX": 256, "NZ": 129},
-    "domain": {"LX": 5.0, "LY": 5.0, "LZ": 5.0}
+    "rho_r": 1.0,
+    "mu_r": 1.0,
+    "Cn": 0.025,
+    "Re": 50.0,
+    "Fr": 1.0,
+    "dt": 5e-05,
+    "d_im": 1.0,
+    "WE_REF": 1.0,
+    "Rad": 1.0,
+    "grid": {
+      "NY": 257,
+      "NX": 256,
+      "NZ": 129
+    },
+    "domain": {
+      "LX": 5.0,
+      "LY": 5.0,
+      "LZ": 5.0
+    }
   },
   "oracle": {
-    "contact_angle_circle_fit_deg": {"expected": 50.0, "abs_tol": 1.0},
-    "circle_L2_over_hmax": {"max": 2.0e-3},
-    "umax_cap": {"max": 5.0e-2},
-    "u_int_rms_cap": {"max": 1.0e-2},
-    "Ifrac_abs_max": {"max": 2.0e-2},
-    "Ifrac_abs_drift_settled": {"max": 2.0e-2, "settled_after_fraction": 0.5},
-    "volume_rel_drift_abs": {"max": 1.0e-2},
-    "cg_abs_drift": {"max": 1.0e-3}
+    "contact_angle_circle_fit_deg": {
+      "expected": 50.0,
+      "abs_tol": 1.0
+    },
+    "circle_L2_over_hmax": {
+      "max": 0.002
+    },
+    "umax_cap": {
+      "max": 0.05
+    },
+    "u_int_rms_cap": {
+      "max": 0.01
+    },
+    "Ifrac_abs_max": {
+      "max": 0.02
+    },
+    "Ifrac_abs_drift_settled": {
+      "max": 0.02,
+      "settled_after_fraction": 0.5
+    },
+    "volume_rel_drift_abs": {
+      "max": 0.01
+    },
+    "cg_abs_drift": {
+      "max": 0.001
+    }
   },
   "hard_checks": {
     "exit_code": 0,
-    "files": ["run_info.txt", "ycg.txt", "diag_v_int.txt", "ch.bin", "ux.bin", "uy.bin", "uz.bin"],
+    "files": [
+      "run_info.txt",
+      "ycg.txt",
+      "diag_v_int.txt",
+      "ch.bin",
+      "ux.bin",
+      "uy.bin",
+      "uz.bin"
+    ],
     "all_finite": true
   },
   "reference": {
-    "contact_angle_circle_fit_deg": 50.1452,
-    "circle_L2_over_hmax": 9.793e-4,
-    "umax_cap": 2.591e-2,
-    "u_int_rms_cap": 3.148e-3,
-    "Ifrac_abs_max": 1.076e-2,
-    "volume_rel_drift_abs": 3.139e-3,
-    "cg_abs_drift": 7.928e-6
+    "contact_angle_circle_fit_deg": 50.145201,
+    "circle_L2_over_hmax": 0.000979,
+    "umax_cap": 0.025906,
+    "u_int_rms_cap": 0.003148,
+    "Ifrac_abs_max": 0.010763,
+    "volume_rel_drift_abs": 0.002954,
+    "cg_abs_drift": 0.000241
   }
 }

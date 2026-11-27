@@ -8,8 +8,8 @@
     "u_int_rms_cap": 0.0031482568,
     "Ifrac_abs_max": 0.010763290000000092,
     "Ifrac_abs_drift_settled": 0.010763290000000092,
-    "volume_rel_drift_abs": 0.0031393855741161697,
-    "cg_abs_drift": 7.928000000045898e-06
+    "volume_rel_drift_abs": 0.0029535244370062852,
+    "cg_abs_drift": 0.0002413989999999755
   },
   "oracle_pass": true
 }
