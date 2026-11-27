@@ -69,9 +69,10 @@
    an error and exits. Compile-time setup (grid, dt, Re, Cn, rho_r, ...) stays
    in the #defines of this file.
    Bo (physical) vs We (internal Weber/capillary slot), up to O(1) consts.
-   Lengths are in units of the drop radius (Rad), so the characteristic
-   length is Rad:
-       Bo = (1-rho_r)*Rad^2*We/Fr^2  =>  We = Bo*Fr^2/((1-rho_r)*Rad^2)
+   Lengths are in units of the initial drop volume-radius (Rad=1 default):
+       Bo_input = (1-rho_r)*Rad^2*We/Fr^2  is the physical Bond number based
+       on the drop radius; the Bond number in code units is Bo/Rad^2.
+       =>  We = Bo*Fr^2/((1-rho_r)*Rad^2)
    Convention: bubble = c=+1 phase, continuous liquid = reference (density 1,
    base viscosity), so rho_r = rho_bubble/rho_liquid <= 1 and mu_r <= 1.
    If rho_r == 1 (matched densities) there is no buoyancy: Bo is forced to 0
