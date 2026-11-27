@@ -36,7 +36,8 @@
 #define LZ   (5.0)         // Length in z direction (in initial radius)
 // Initial conditions
 #ifndef Rad
-#define Rad  1.0            // radius of the drop w.r.t. half height
+#define Rad  1.0            // drop radius in code units: lengths are dimensionless
+                           // with the initial drop volume-radius, keep Rad = 1
 #endif
 #define A_P  0.0            // magnitude of the streamwise perturbation
 #define eps  0.0            // magnitude of the random perturbation
